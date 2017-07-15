@@ -14,7 +14,7 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 `python3 VaxDesign.py PDBID CHAIN FROM TO`
 
-* PDBID = The protein's Protein Data Bank identification name.
+* PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name.
 * CHAIN = The chain where your target site resides within the protein .pdb file.
 * FROM = the start of your target site.
 * TO = the end of your target site.
