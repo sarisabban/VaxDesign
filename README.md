@@ -31,4 +31,4 @@ This script has been last tested to work well with PyRosetta 4 Release 147 and u
 Here is a [video](youtube.com/) that explains how to select a target site, how the script functions, and what results you get. If I did not make a video yet, bug me until I make one.
 
 The script protocol is as follows:
-* STILL UNDERT DEVELOPMENT
+* STILL UNDER DEVELOPMENT
