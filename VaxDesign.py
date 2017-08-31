@@ -79,7 +79,7 @@ print(Purple + '''
   ╠═╣│ │ │ │ │   ║║├┤ └─┐││ ┬│││  ╠═╣  ╚╗╔╝├─┤│  │  ││││├┤ 
   ╩ ╩└─┘ ┴ └─┘  ═╩╝└─┘└─┘┴└─┘┘└┘  ╩ ╩   ╚╝ ┴ ┴└─┘└─┘┴┘└┘└─┘
 ''' + Cancel)
-print(Yellow+ 'Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)' + Cancel)
+print(Yellow + 'Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)' + Cancel)
 print(Cyan + '--------------------------------------------------------------' + Cancel)
 time.sleep(3)
 
@@ -115,7 +115,7 @@ def Find(Filename):
 	for root , dirs , files in os.walk('/'):
 		if Filename in files:
 			result.append(os.path.join(root))
-	return(result[0]+'/')
+	return(result[0] + '/')
 
 #2 - Extract Motif
 def Motif(PDB_ID , Chain , Motif_From , Motif_To):
@@ -757,24 +757,31 @@ def Graft(receptor , motif , scaffold):
 	scorefxn = get_fa_scorefxn()
 	print(scorefxn(scaffold))
 	mover = pyrosetta.rosetta.protocols.motif_grafting.movers.MotifGraftMover()
-	mover.init_parameters(receptor , motif , 1.0 , 2 , 5 , '0:0' , '0:0' , 'ALA' , '3:4:5:6' , True , False , True , False , False , True , False)
+	#Setup motif hotspots
+	motifpose = pose_from_pdb(motif)
+	spots = list()
+	for resi in range(motifpose.total_residue()):
+		spots.append(str(resi + 1))
+	hotspots = ':'.join(spots)
+	#Setup grafting mover
+	mover.init_parameters(receptor , motif , 1.0 , 2 , 5 , '0:0' , '0:0' , 'ALA' , hotspots , True , False , True , False , False , True , False)
 	'''
-	context_structure="receptor.pdb"
-	motif_structure="motif.pdb"
-	RMSD_tolerance="1.0"
-	NC_points_RMSD_tolerance="2"
-	clash_score_cutoff="5"
-	combinatory_fragment_size_delta="0:0"
-	max_fragment_replacement_size_delta="0:0"
-	clash_test_residue="ALA"
-	hotspots="3:4:5:6"
-	full_motif_bb_alignment="True"
-	allow_independent_alignment_per_fragment="False"
-	graft_only_hotspots_by_replacement="True"
-	only_allow_if_N_point_match_aa_identity="False"
-	only_allow_if_C_point_match_aa_identity="Flase"
-	revert_graft_to_native_sequence="True"
-	allow_repeat_same_graft_output="False"
+	context_structure				= 'receptor.pdb'
+	motif_structure					= 'motif.pdb'
+	RMSD_tolerance					= '2.0'
+	NC_points_RMSD_tolerance			= '2'
+	clash_score_cutoff				= '5'
+	combinatory_fragment_size_delta			= '0:0'
+	max_fragment_replacement_size_delta		= '0:0'
+	clash_test_residue				= 'ALA'
+	hotspots					= '1:2:3:4:5:6:7:8:9:10'
+	full_motif_bb_alignment				= 'True'
+	allow_independent_alignment_per_fragment	= 'False'
+	graft_only_hotspots_by_replacement		= 'True'
+	only_allow_if_N_point_match_aa_identity		= 'False'
+	only_allow_if_C_point_match_aa_identity		= 'Flase'
+	revert_graft_to_native_sequence			= 'True'
+	allow_repeat_same_graft_output			= 'False'
 	'''
 	mover.apply(scaffold)
 	print(scorefxn(scaffold))
@@ -896,6 +903,7 @@ while True:
 	else:
 		continue
 '''
+
 #2. Isolate Motif
 Motif(Protein , Chain , Motif_from , Motif_to)
 
@@ -906,17 +914,23 @@ Receptor(Protein , RecChain)
 Graft('receptor.pdb' , 'motif.pdb' , pose)
 
 #5. Sequence Design The Structure Around The Motif
-Design.Motif(pose , Motif_from , Motif_to)
+#Design.Motif(pose , Motif_from , Motif_to)
 '''
 #6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
 while True:
 	Fragment.Make(pose)
 	Fragment.RMSD(pose)
 
-#7. Average RMSD Should Be < 2Å)
+#7. Average RMSD Should Be < 2Å
 	if Fragment.Average() <= 2:
+		FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
+		FragRMSD.write(Fragment.Average())
+		FragRMSD.close()
 		break
 	else:
+		FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
+		FragRMSD.write(Fragment.Average())
+		FragRMSD.close()
 		continue
 '''
 
@@ -924,6 +938,10 @@ while True:
 
 
 
-Fragment.Make(pose)
-Fragment.RMSD(pose)
-print(Fragment.Average())
+
+#Fragment.Make(pose)
+#Fragment.RMSD(pose)
+#FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
+#FragRMSD.write(Fragment.Average())
+#FragRMSD.close()
+#python3 VaxDesign.py 2y7q A B 420 429
