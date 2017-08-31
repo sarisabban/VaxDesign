@@ -17,25 +17,26 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 `python3 VaxDesign.py PDBID CHAIN FROM TO`
 
-* PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name.
-* CHAIN = The chain where your target site resides within the protein .pdb file.
-* FROM = the start of your target site.
-* TO = the end of your target site.
+* PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
+* CHAIN = The chain where your target site resides within the protein .pdb file
+* FROM = the start of your target site
+* TO = the end of your target site
 
-2. Calculation time is about 72 hours.
+2. Calculation time is about 72 hours on a normal desktop computer.
 3. Access to the internet is a requirement since the script will be sending and retrieving data from several servers.
+4. Use [this Rosetta Abinitio script](https://github.com/sarisabban/RosettaAbinitio) to simulate the folding of the final designed vaccine's protein structure. An HPC (High Preformance Computer) and the original C++ [Rosetta](https://www.rosettacommons.org/) are required for this step.
 
 ## Description
 This script autonomously designs a vaccine from a user specified target site. This is not artificial intellegance, you cannot just ask the the script to design "A" vaccine, you must understand what target site you want to develop antibodies against (make a liturature search and understand your disease and target site), then supply this target site to the script to build a protein structure around it so the final protein can be used as a vaccine. You must have prior understanding of Bioinformatics and Immunology in order to be able to understand what site to target and to supply it to the script. Once you identify a target site, the script will take it and run a long protocol, without the need for you to intervene, that will result in an ideal protein structure displaying your target site in its original 3D cofiguration. Thus the protien, theoretically, can be used as a vaccine against this site, and hopefully neutralise the disease you are researching. Everytime you run this script a different final protien structure will be generated, this is important to keep in mind, because if you want to generate many different structures to test or to use as boosts you can simply run the same target site again and you will end up with a different final structure.
 
+This script has been last tested to work well with PyRosetta 4 Release 147 and using Python 3.5. If you use this script on a newer PyRosetta or Python version and it fails please notify the author to get it updated.
+
 Here is a [video](youtube.com/) that explains how to select a target site, how the script functions, and what results you get. If I did not make a video yet, bug me until I make one.
 
 The script protocol is as follows:
-* STILL UNDERT DEVELOPMENT
-
-python3 VaxDesign.py 2y7q B 36 37
+* STILL UNDER DEVELOPMENT
 '''
-
+#--------------------------------------------------------------------------------------------------------------------------------------
 #Import Modules
                                #Modules to download---> #      #       #	#
 import sys , os , re , time , datetime , subprocess , zeep , numpy , Bio.PDB , bs4 , random , requests , urllib.request
@@ -142,7 +143,7 @@ def Motif(PDB_ID , Chain , Motif_From , Motif_To):
 #3 - PyMOL Visualisation
 class PyMol():
 	#3.1 - Setup PyMOL For Visualisation
-	def Start():
+	def Start(pose):
 		''' Starts PyMOL and allows it to listen to PyRosetta ''' 
 		''' Opens PyMOL '''
 		PATH = Find('PyMOL-RosettaServer.py')										#Find path to PyRosetta
@@ -153,7 +154,7 @@ class PyMol():
 		new_terminal = "x-terminal-emulator -e pymol temp.py".split()							#Command to open a new terminal window and run from it PyMol opening the temporary file
 		processes = [subprocess.Popen(new_terminal)]									#Execute new terminal window command
 		time.sleep(5)													#Sleep for 5 seconds to allow PyMol to load up fully and start listening before anything else happens
-		AddPyMOLObserver(test, True)											#Every time a change is happens in the pose coordinates PyMOL will keep a history of the changed and save it in different frames
+		AddPyMOLObserver(pose, True)											#Every time a change is happens in the pose coordinates PyMOL will keep a history of the changed and save it in different frames
 		os.remove('temp.py')												#Keep working directory clea
 	#3.2 - Live PyMOL Visualisation:
 	def Update(pose):
@@ -207,16 +208,19 @@ class Score():
 
 #5 - PSIPRED
 def PSIPRED(pose):
-	''' Submits an amino acid sequence to the PsiPred server at UCL for accurate secondary structure prediction, returns a string alignment with the prediction '''
-	''' Generates the PSIPRED.psipred file '''
+	''' Submits an amino acid sequence to the PsiPred server at UCL for accurate secondary structure prediction '''
+	''' Generates the PSIPRED.psipred file. First three lines are the prediction, last line is the actual protein's secondary structures for comparison '''
 	#The PsiPred server at UCL uses SOAP to allow us to interact with it (the zeep module allows the of SOAP in python)
 	client = zeep.Client('http://bioinf.cs.ucl.ac.uk/psipred_api/wsdl')						#Load the PSIPRED WSDL into a variable
 	email = 'acresearch@icloud.com'											#Email is required for submission
 	title = 'scaffold'												#A submission title is required for submission
 	#Submit
 	sequence = pose.sequence()
+	print('Submitting Sequence: ' + sequence)
 	Submission = client.service.PsipredSubmit(sequence , email , title , 'True' , 'False' , 'False' , 'all')	#Method from WSDL to submit a protein's sequence for PSIPRED, zeep returns a dictionary so save to a variable
 	job_id = Submission['job_id']											#Get the job ID from the dictionary for next step
+	print('Job ID: ' + job_id)
+	print('LINK: http://bioinf.cs.ucl.ac.uk/psipred/result/' + job_id)
 	print(Green + '[+] Sequence submitted to PSIPRED server at University College London' + Cancel)
 	#Get Result
 	#Not an infinite loop, this is to break the script (after 6:00 hours) if there are problems with the PSIPRED server (it sometimes happens)
@@ -263,89 +267,28 @@ def PSIPRED(pose):
 	time.sleep(3)
 	os.remove('temp.psipred')		#Keep working directory clean, remove the temp.psipred file
 	print(Green + '[+] PSIPRED prediction complete' + Cancel)
-
-#6 - Get Surface, Boundery, and Core
-def ProtLayers(Filename):
-	''' Takes A .pdb protein structure file, finds each layer of the protein (Surface, Boundery, Core) and returns the residue number of each amino acid and which layer it corresponds to '''
-	''' Returns a tuple with residue number for Surface [0], Boundery [1], Core [2] '''
-	#Standard script to setup biopython's DSSP to calculate SASA using Wilke constants (Tien et.al., 2013 - PMID: 24278298)
+	#Protein's actual structure
+	PSI = open('PSIPRED.psipred' , 'a')
+	pose.dump_pdb('temporary.pdb')
+	sslist=list()
 	p = Bio.PDB.PDBParser()
-	structure = p.get_structure('X' , Filename)
+	structure = p.get_structure('X', 'temporary.pdb')
 	model = structure[0]
-	dssp = Bio.PDB.DSSP(model , Filename , acc_array='Wilke')
-	#Loop to isolate SASA for each amino acid
-	lis = list()
+	dssp = Bio.PDB.DSSP(model, 'temporary.pdb')
 	for x in dssp:
-		if x[1]=='A' : sasa=129*(x[3])
-		elif x[1]=='V' : sasa=174*(x[3])
-		elif x[1]=='I' : sasa=197*(x[3])
-		elif x[1]=='L' : sasa=201*(x[3])
-		elif x[1]=='M' : sasa=224*(x[3])
-		elif x[1]=='P' : sasa=159*(x[3])
-		elif x[1]=='Y' : sasa=263*(x[3])
-		elif x[1]=='F' : sasa=240*(x[3])
-		elif x[1]=='W' : sasa=285*(x[3])
-		elif x[1]=='R' : sasa=274*(x[3])
-		elif x[1]=='N' : sasa=195*(x[3])
-		elif x[1]=='C' : sasa=167*(x[3])
-		elif x[1]=='Q' : sasa=225*(x[3])
-		elif x[1]=='E' : sasa=223*(x[3])
-		elif x[1]=='G' : sasa=104*(x[3])
-		elif x[1]=='H' : sasa=224*(x[3])
-		elif x[1]=='K' : sasa=236*(x[3])
-		elif x[1]=='S' : sasa=155*(x[3])
-		elif x[1]=='T' : sasa=172*(x[3])
-		elif x[1]=='D' : sasa=193*(x[3])
-		lis.append((x[2] , sasa))
-	#Label each amino acid but record its residue number
-	core = list()
-	boundery = list()
-	surface = list()
-	count = 0
-	for x , y in lis:
-		count = count + 1
-		#Loop
-		if y <= 25 and (x == '-' or x == 'T' or x == 'S'):		#Label each amino acid depending on its SASA position according to the parameters highlighted in the paper by (Koga et.al., 2012 - PMID: 23135467). The parameters are as follows:
-			core.append(count)					#Surface:
-		elif 25 < y < 40 and (x == '-' or x == 'T' or x == 'S'):	#	Helix or Sheet:	SASA >= 60
-			boundery.append(count)					#	Loop:		SASA >= 40
-		elif y >= 40 and (x == '-' or x == 'T' or x == 'S'):		#
-			surface.append(count)					#Boundry:
-		#Helix								#	Helix or Sheet:	15 < SASA < 60
-		elif y <= 15 and (x == 'G' or x == 'H' or x == 'I'):		#	Loop:		25 < SASA < 40
-			core.append(count)					#
-		elif 15 < y < 60 and (x == 'G' or x == 'H' or x == 'I'):	#Core:
-			boundery.append(count)					#	Helix or Sheet:	SASA <= 15
-		elif y >= 60 and (x == 'G' or x == 'H' or x == 'I'):		#	Loop:		SASA <= 25
-			surface.append(count)					#
-		#Sheet								#DSSP labels:
-		elif y <= 15 and (x == 'B' or x == 'E'):			#Loop =		- or T or S
-			core.append(count)					#Helix =	G or H or I
-		elif 15 < y < 60 and (x == 'B' or x == 'E'):			#Sheet =	B or E
-			boundery.append(count)
-		elif y >= 60 and (x == 'B' or x == 'E'):
-			surface.append(count)
-	#Return result: Surface is [0], Boundery is [1], Core is [2]
-	return(surface , boundery , core)
+		if x[2]=='G' or x[2]=='H' or x[2]=='I':
+			y='H'
+		elif x[2]=='B' or x[2]=='E':
+			y='E'
+		else:
+			y='C'
+		sslist.append(y)
+	ss = ''.join(sslist)
+	os.remove('temporary.pdb')
+	PSI.write('.PDB: ' + ss)
+	PSI.close()
 
-#7 - Probability To Make A Choice
-def Decision(score_before , score_after):
-	''' Metropolis Criterion, P = 1 to accept all structures when final score is lower than starting score, P closer to 0 = accept less and less but sometimes accept to escape local energy minima '''
-	''' Returns a string with either Accept or Reject '''
-	E = score_after - score_before		#Takes the difference between the score before and after a change in a structure
-	if E >= 0:				#If the score after change is larger than the score before change have low P value
-		negE = E * -1
-		kt = 1
-		e = math.e
-		P = e**(negE/kt)
-	elif E < 0:				#If the score after change is larger than the score before change have P of 1
-		P = 1
-	if (random.random() < P) == True:	#Randomly accept or reject the score difference. Probability to accept increases as P gets closer to 1
-		return('Accept')
-	else:
-		return('Reject')
-
-#8 - RosettaRelax
+#6 - RosettaRelax
 def Relax(pose):
 	''' Relaxes a structure '''
 	''' Updates the original pose with the relaxed pose '''
@@ -354,7 +297,7 @@ def Relax(pose):
 	relax.set_scorefxn(scorefxn)
 	relax.apply(pose)
 
-#9 - SASA
+#7 - SASA
 def SASA(pose):
 	''' Calculates the different layers (Surface, Boundery, Core) of a structure according its SASA (solvent-accessible surface area) '''
 	''' Returns three lists Surface amino acids = [0] , Boundery amino acids = [1] , Core amino acids = [2] '''
@@ -421,9 +364,9 @@ def SASA(pose):
 	os.remove('ToDesign.pdb')						#Keep working directory clean
 	return(surface , boundery , core)
 
-#10 - RosettaDesign
+#8 - RosettaDesign
 class Design():
-	#10.1 - Design Whole Structure All At Once
+	#8.1 - Design Whole Structure All At Once
 	def Whole(pose):
 		''' Applies RosettaDesign to change the whole structure's amino acids (the whole structure all at once) while maintaining the same backbone '''
 		''' Just updates the pose with the new structure '''
@@ -444,7 +387,7 @@ class Design():
 		print(score1_original_before_relax)
 		print(score2_original_after_relax)
 		print(score3_of_design_after_relax)
-	#10.2 - Design The Structure Once Layer At A Time
+	#8.2 - Design The Structure Once Layer At A Time
 	def Layer(pose):
 		''' Applies RosettaDesign to change the whole structure's amino acids (one layer at a time) while maintaining the same backbone. It is efficient and faster than the previous method (Design_Full) '''
 		''' Just updates the pose with the new structure '''
@@ -501,7 +444,7 @@ class Design():
 		print(score1_original_before_relax)
 		print(score2_original_after_relax)
 		print(score3_of_design_after_relax)
-	#10.3 - Design The Structure One Layer At A Time Moving Towards A Tightly Packed Core With Every Loop
+	#8.3 - Design The Structure One Layer At A Time Moving Towards A Tightly Packed Core With Every Loop
 	def Pack(pose):
 		''' Applies FastDesign to change the whole structure's amino acids (one layer at a time as well as designing towards an optimally packed core) while maintaining the same backbone. Should be faster than the Whole method and results in a better final structure than the Layer method '''
 		''' Generates the Designed.pdb file '''
@@ -561,7 +504,7 @@ class Design():
 		print('Original Structure Score:' , '\t' , score1_original_before_relax)
 		print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
 		print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
-	#10.4 - Design The Structure One Layer At A Time, Except For A Desired Motif, Moving Towards A Tightly Packed Core With Every Loop
+	#8.4 - Design The Structure One Layer At A Time, Except For A Desired Motif, Moving Towards A Tightly Packed Core With Every Loop
 	def Motif(pose , Motif_From , Motif_To):
 		''' Applies RosettaDesign to change the structure's amino acids (one layer at a time - like in the Design_Layer method) except for a desired continuous motif sequence while maintaining the same backbone '''
 		''' Just updates the pose with the new structure '''
@@ -608,7 +551,7 @@ class Design():
 			MC.set_preapply(True)							#To apply Boltzmann accept/reject to all applications of the mover (always use False)
 			MC.set_drift(True)							#Make current pose = next iteration pose
 			MC.set_sampletype('high')						#Move monte carlo to higher filter score
-			MC.recover_low(True)							#True - at the end of application, the pose is set to the lowest (or highest if sample_type="high") scoring pose
+			#MC.recover_low(True)							#True - at the end of application, the pose is set to the lowest (or highest if sample_type="high") scoring pose
 			#MC.stopping_condition()						#Stops before trials are done if a filter evaluates to true
 			MC.add_filter(filters , False , 1.0 , 'high' , True)			#Add a filter (Filter Type , Adaptive , Temperature , Sample Type , Rank By)
 			#MC.task_factory(task) #Causes an infinite loop				#Include a Task Factory
@@ -625,16 +568,16 @@ class Design():
 		print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
 		print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
 
-#11 - Find RMDS Between Two Structures
+#9 - Find RMDS Between Two Structures
 def RMSD(pose1 , pose2):
 	''' To calculate the RMDS between two poses '''
 	''' Returns value as integer '''
 	RMSD = rosetta.core.scoring.CA_rmsd(pose1 , pose2)
 	return(RMSD)
 
-#12 - Fragment Generation and Identification
+#10 - Fragment Generation and Identification
 class Fragment():
-	#12.1 - Make The 3-mer and 9-mer Fragment Files
+	#10.1 - Make The 3-mer and 9-mer Fragment Files
 	def Make(pose):
 		''' Submits the pose to the Robetta Server (http://www.robetta.org) for fragment generation that are used for the Abinitio folding simulation '''
 		''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
@@ -642,7 +585,7 @@ class Fragment():
 		#1 - Post
 		web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
 		payload = {
-			'UserName':'houcemeddine',
+			'UserName':'ac.research',
 			'Email':'',
 			'Notes':'structure',
 			'Sequence':sequence,
@@ -662,6 +605,8 @@ class Fragment():
 				JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line)
 		JobURL = 'http://www.robetta.org/' + JobID[0]
 		#2 - Check
+		ID = JobID[0].split('=')
+		print('Job ID: ' + str(ID[1]))
 		while True:
 			Job = urllib.request.urlopen(JobURL)
 			jobdata = bs4.BeautifulSoup(Job , 'lxml')
@@ -678,26 +623,25 @@ class Fragment():
 		fasta = Resfile = open('structure.fasta' , 'w')
 		fasta.write(sequence)
 		fasta.close()
-		JobID = JobURL.split('=')
-		os.system('wget http://www.robetta.org/downloads/fragments/' + str(JobID[1])  + '/aat000_03_05.200_v1_3')
-		os.system('wget http://www.robetta.org/downloads/fragments/' + str(JobID[1])  + '/aat000_09_05.200_v1_3')
-		os.system('wget http://www.robetta.org/downloads/fragments/' + str(JobID[1])  + '/t000_.psipred_ss2')
-	#12.2 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
+		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
+		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
+		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
+	#10.2 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
 	def Quality(pose):
 		''' Measures the quality of the 9-mer fragment files before an Abinitio folding simulation '''
 		''' Returns the number of good fragments (below 1Å) as integer '''
 		#Choose Fragment
 		fragset = ConstantLengthFragSet(9)						#Only use 9-mer because 3-mer is not informative enough
-		fragset.read_fragment_file('9-mer')
+		fragset.read_fragment_file('aat000_09_05.200_v1_3')
 		#Run Calculator
 		calc = FragQualCalculator(fragset , 1.0 , 30.0)
 		frags = calc.get('num_goodfrag' , pose)
 		return(frags)
-	#12.3 - Calculate The Best Fragment's RMSD At Each Position And Plot The Result
-	def RMSD(pose , Fragment_File):
+	#10.3 - Calculate The Best Fragment's RMSD At Each Position And Plot The Result
+	def RMSD(pose):
 		''' Measures the RMSD for each fragment at each position and plots the lowest RMSD fragment for each positon '''
 		''' Generates an RMSD vs Position PDF plot '''
-		frag = open(Fragment_File , 'r')
+		frag = open('aat000_09_05.200_v1_3' , 'r')
 		rmsd = open('temp.dat' , 'w')
 		for line in frag:
 			if line.startswith(' position:'):
@@ -714,7 +658,7 @@ class Fragment():
 			frames = FrameList()
 			#Setup the 9-mer fragment (9-mer is better than 3-mer for this analysis)
 			fragset = ConstantLengthFragSet(9)
-			fragset.read_fragment_file(Fragment_File)
+			fragset.read_fragment_file('aat000_09_05.200_v1_3')
 			fragset.frames(count , frames)
 			#Setup the MoveMap
 			movemap = MoveMap()
@@ -752,7 +696,7 @@ class Fragment():
 		data.close()
 		gnuplot = open('gnuplot_sets' , 'w')
 		gnuplot.write("""set terminal postscript
-set output './plot.pdf'
+set output './plot_frag.pdf'
 set encoding iso_8859_1
 set term post eps enh color
 set xlabel 'Position'
@@ -771,81 +715,170 @@ exit""")
 		os.system('gnuplot < gnuplot_sets')
 		os.remove('gnuplot_sets')
 		os.remove('temp.dat')
+	#Calculates The Average RMSD of The Fragments
+	def Average():
+		''' Uses the RMSDvsPosition.dat to average out the fragment RMSD over the entire protein structure. Can only be used after the Fragment.RMSD() function '''
+		''' Prints out the average RMSD '''
+		data = open('RMSDvsPosition.dat' , 'r')
+		value = 0
+		for line in data:
+			line = line.split()
+			RMSD = float(line[1])
+			value = value + RMSD
+			count = int(line[0])
+		Average_RMSD = value / count
+		return(Average_RMSD)
 
-#13 - Denovo Design
-def DeNovo2(pose):
-	''' Preforms De Novo Design on a protein's structure using the BluePrintBDR Mover. Best to design protein with only helix (no sheets) '''
-	''' Generates a BDR.pdb file '''
-	scorefxn = get_fa_scorefxn()
-	pose.dump_pdb('temp.pdb')
-	SS=list()
-	p = Bio.PDB.PDBParser()
-	structure = p.get_structure('X' , 'temp.pdb')
-	model = structure[0]
-	dssp = Bio.PDB.DSSP(model , 'temp.pdb')
-	for structure in dssp:
-		if structure[2] == 'G' or structure[2] == 'H' or structure[2] == 'I':
-			rename = 'H'
-		elif structure[2] == 'B' or structure[2] == 'E':
-			rename = 'E'
-		else:
-			rename = 'L'
-		SS.append(rename)
-	start = 0
-	end = 9
-	loops = pose.total_residue()/5
-	for section in range(int(loops)):
-		blueprint = open('blueprint' , 'w')
-		count = 0
-		for secondary_structure in SS:
-			if start <= count <= end:
-				count += 1
-				line = str(count) + ' V ' + str(secondary_structure) + 'X R\n'
-				blueprint.write(line)
+#11 - Denovo Design
+def DeNovo(number_of_output):
+	''' Preforms De Novo Design on a protein's structure using the BluePrintBDR Mover. Generates only structures with helices (no sheet) '''
+	''' Generates user defined number of DeNovo_#.pdb files each with a different structure '''
+	#1 - Generate a temporary dummy .pdb so the BluePrintBDR mover can work on
+	temp = open('temp.pdb' , 'w')
+	temp.write('ATOM      1  N   ASP C   1      33.210  65.401  53.583  1.00 55.66           N  \nATOM      2  CA  ASP C   1      33.590  64.217  54.411  1.00 55.66           C  \nATOM      3  C   ASP C   1      33.574  62.950  53.542  1.00 52.88           C  \nATOM      4  O   ASP C   1      34.516  62.724  52.780  1.00 50.94           O  \nATOM      5  CB  ASP C   1      32.656  64.090  55.624  1.00 58.39           C  ')
+	temp.close()
+	pose = pose_from_pdb('temp.pdb')
+	RgValue = 9999999999
+	PoseFinal = Pose()
+	for nterm in range(number_of_output):							#Number of different output structures
+		#2 - Generate blueprint file
+		size = random.randint(120 , 130)						#Random protein size
+		#3 - Construct the loops
+		info = list()
+		for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
+			Loop = random.randint(0 , 1)						#Randomly choose weather to add a 3 residue loop or a 4 residue loop
+			if Loop == 0:
+				position = random.randint(1 , size)				#Randomly choose where these loops are added
+				info.append((position , 3))
 			else:
-				count += 1
-				line = str(count) + ' V ' + str(secondary_structure) + 'X .\n'
-				blueprint.write(line)
+				position = random.randint(1 , size)
+				info.append((position , 4))
+		#4 - Generate the blueprint file
+		blueprint = open('blueprint' , 'w')
+		for residues in range(size):
+			for x in info:
+				if residues == x[0]:
+					for y in range(x[1]):
+						blueprint.write('0 V ' + 'L' + 'X R\n')		#Loop insert
+			blueprint.write('0 V ' + 'H' + 'X R\n')					#Helix insert
 		blueprint.close()
-		start += 5
-		end += 5
+		#5 - Run the BluePrintBDR mover
 		mover = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR()
+		mover.num_fragpick(200)
+		mover.use_fullmer(True)
 		mover.use_abego_bias(True)
+		mover.use_sequence_bias(False)
+		mover.max_linear_chainbreak(0.07)
+		mover.ss_from_blueprint(True)
+		mover.dump_pdb_when_fail('')
+		mover.set_constraints_NtoC(-1.0)
 		mover.set_blueprint('blueprint')
 		mover.apply(pose)
-	pose.dump_pdb('DeNovo.pdb')
+		os.remove('blueprint')
+		#Calculate Radius of Gyration (Rg) and choose lowest Rg score
+		Rg = ScoreFunction()
+		Rg.set_weight(pyrosetta.rosetta.core.scoring.rg , 1)
+		Value = Rg(pose)
+		#print(Value)
+		if Value <= RgValue:
+			RgValue = Value
+			PoseFinal.assign(pose)
+		else:
+			continue
+	PoseFinal.dump_pdb('DeNovo.pdb')
 	os.remove('temp.pdb')
-	os.remove('blueprint')
 
-# - Epigrafting ???
-# - Symmetric Design
+#12 - Grafting
+def Graft(receptor , motif , scaffold):
+	''' Grafts a motif onto a protein scaffold structure '''
+	''' Generates structure.pdb '''
+	scorefxn = get_fa_scorefxn()
+	print(scorefxn(scaffold))
+	mover = pyrosetta.rosetta.protocols.motif_grafting.movers.MotifGraftMover()
+	mover.init_parameters(receptor , motif , 1.0 , 2 , 5 , '0:0' , '0:0' , 'ALA' , '3:4:5:6' , True , False , True , False , False , True , False)
+		'''
+		context_structure="receptor.pdb"
+		motif_structure="motif.pdb"
+		RMSD_tolerance="1.0"
+		NC_points_RMSD_tolerance="2"
+		clash_score_cutoff="5"
+		combinatory_fragment_size_delta="0:0"
+		max_fragment_replacement_size_delta="0:0"
+		clash_test_residue="ALA"
+		hotspots="3:4:5:6"
+		full_motif_bb_alignment="True"
+		allow_independent_alignment_per_fragment="False"
+		graft_only_hotspots_by_replacement="True"
+		only_allow_if_N_point_match_aa_identity="False"
+		only_allow_if_C_point_match_aa_identity="Flase"
+		revert_graft_to_native_sequence="True"
+		allow_repeat_same_graft_output="False"
+		'''
+	mover.apply(scaffold)
+	print(scorefxn(scaffold))
+	scaffold.dump_pdb('structure.pdb')
 #--------------------------------------------------------------------------------------------------------------------------------------
 #List of All Functions And Their Arguments
 '''
 Motif(Protein , Chain , Motif_from , Motif_to)
 PSIPRED(pose)
-print(ProtLayers('structure.pdb'))
 print(Decision(score_before , score_after))
 Relax(pose)
 SASA(pose)
 print(Score.ALL(pose))
 print(Score.AA(pose))
-PyMol.Start()
+PyMol.Start(pose)
 PyMol.Update(pose)
 PyMol.Energy(pose)
-Design.Whole(pose)
+DeNovo(1000)					#1. Comes first
+pose = pose_from_pdb('DeNovo.pdb')		#2. Then identify pose
+Design.Whole(pose)				#3. Then continue
 Design.Layer(pose)
 Design.Pack(pose)
 Design.Motif(pose , Motif_from , Motif_to)
 print(RMSD(pose1 , pose2))
 Fragment.Make(pose)
 print(Fragment.Quality(pose))
-Fragment.RMSD(pose , '9-mer')
-Blueprint('structure.pdb')
-DeNovo(pose)
+Fragment.RMSD(pose)
+print(Fragment.Average())
+Requires pose = pose_from_pdb('scaffold.pdb')	#1. Comes first
+Graft('receptor.pdb' , 'motif.pdb' , pose)	#2. Then run grafting. Pose must be relaxed and designed after grafting
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Protocol
 
+#Build The Scaffold Structure
+'''
+while True:
+	DeNovo(100)						#Build scaffold topology by De Novo Design
+	pose = pose_from_pdb('DeNovo.pdb')			#Identify pose
+	Design.Pack(pose)					#Sequence design of topology
+	Fragment.Make(pose)					#Generate fragments in preparation for Abinitio fold simulation
+	Fragment.RMSD(pose , 'aat000_09_05.200_v1_3')		#Plot fragment quality (all positions' RMSD should be < 1Å)
+	#Repeat if fragment quality is bad (Average RMSD > 2Å)
+	if Fragment.Average() <= 2:
+		break
+	else:
+		continue
+'''
 
-pose = pose_from_pdb('structure.pdb')
+
+
+
+
+#Isolate Motif
+#Motif(Protein , Chain , Motif_from , Motif_to)
+
+#Graft Motif onto Scaffold
+#Graft('receptor.pdb' , 'motif.pdb' , pose)
+
+#Sequence Design The Structure Around The Motif
+#Design.Motif(pose , Motif_from , Motif_to)
+
+#Generate Fragments in Preparation For Abinitio Fold Simulation and Plot Fragment Quality (all positions' RMSD should be < 1Å)
+#Fragment.Make(pose)
+#Fragment.RMSD(pose , 'aat000_09_05.200_v1_3')
+
+
+
+#python3 VaxDesign.py 2y7q B 36 37
