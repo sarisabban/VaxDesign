@@ -8,17 +8,16 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
 2. Use the following commands (in GNU/Linux) to install all nessesary Python libraries for this script to run successfully:
 
-`sudo apt install python3-pip pymol DSSP gnuplot`
-
-`sudo python3 -m pip install zeep numpy biopython bs4`
+`sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4`
 
 ## How To Use:
 1. Use the following command to run the script:
 
-`python3 VaxDesign.py PDBID CHAIN FROM TO`
+`python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
-* CHAIN = The chain where your target site resides within the protein .pdb file
+* RCHAIN = The chain where your receptor resides within the protein .pdb file
+* CHAIN = The chain where your target site resides (not part of the receptor) within the protein .pdb file
 * FROM = the start of your target site
 * TO = the end of your target site
 
@@ -34,7 +33,13 @@ This script has been last tested to work well with PyRosetta 4 Release 147 and u
 Here is a [video](youtube.com/) that explains how to select a target site, how the script functions, and what results you get. If I did not make a video yet, bug me until I make one.
 
 The script protocol is as follows:
-* STILL UNDER DEVELOPMENT
+1. Build Scaffold. --> STILL UNDER DEVELOPMENT --> I am having lots of trouble with De Novo Design (I have a very long temporary work around)
+2. Isolate Motif.
+3. Isolate Receptor.
+4. Graft Motif onto Scaffold.
+5. Sequence Design The Structure Around The Motif.
+6. Generate Fragments for Rosetta Abinitio Folding Simulation.
+7. If Average Fragment RMSD is Higher Than 2Å Repeat Steps 5 and 6.
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 #Import Modules
@@ -95,9 +100,10 @@ init()
 
 #User Inputs
 Protein		= sys.argv[1]
-Chain		= sys.argv[2]
-Motif_from	= sys.argv[3]
-Motif_to	= sys.argv[4]
+RecChain	= sys.argv[2]
+Chain		= sys.argv[3]
+Motif_from	= sys.argv[4]
+Motif_to	= sys.argv[5]
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Functions
 
@@ -137,12 +143,27 @@ def Motif(PDB_ID , Chain , Motif_From , Motif_To):
 			AA2 = AA1
 			Motif.write(final_line)				#Write to new file called motif.pdb
 	Motif.close()
+
+#3 - Extract Receptor
+def Receptor(PDB_ID , Chain):
+	''' This function isolates a chain from a downloaded .pdb file '''
+	''' Generates the receptor.pdb file '''
+	#Isolate the receptor
+	pdb = open(PDB_ID + '.pdb' , 'r')
+	Receptor = open('receptor.pdb' , 'w')
+	for line in pdb:
+		linesplit = line.split()
+		if linesplit[0] == 'ATOM':
+			if linesplit[4] == Chain:
+				Receptor.write(line)
+	Receptor.close()
 	#Keep working directory clean
 	os.remove(PDB_ID + '.pdb')					#Remove the protein's original file
 
-#3 - PyMOL Visualisation
+
+#4 - PyMOL Visualisation
 class PyMol():
-	#3.1 - Setup PyMOL For Visualisation
+	#4.1 - Setup PyMOL For Visualisation
 	def Start(pose):
 		''' Starts PyMOL and allows it to listen to PyRosetta ''' 
 		''' Opens PyMOL '''
@@ -156,7 +177,7 @@ class PyMol():
 		time.sleep(5)													#Sleep for 5 seconds to allow PyMol to load up fully and start listening before anything else happens
 		AddPyMOLObserver(pose, True)											#Every time a change is happens in the pose coordinates PyMOL will keep a history of the changed and save it in different frames
 		os.remove('temp.py')												#Keep working directory clea
-	#3.2 - Live PyMOL Visualisation:
+	#4.2 - Live PyMOL Visualisation:
 	def Update(pose):
 		''' Transmits what is happening to a structure in PyRosetta to PyMol '''
 		''' Shows structure in PyMol or updates PyMol with new structure '''
@@ -166,7 +187,7 @@ class PyMol():
 		pymol.keep_history(True)	#To keep separate frames for each conformation as we modify it
 		#colouring
 		#pymol.send_colors(pose , rosetta.std.map_int_int() , default_color=rosetta.protocols.moves.XC_green)		#Only Change XC_green to XC_red or any other colour
-	#3.3 - Show Each Residue's Energy
+	#4.3 - Show Each Residue's Energy
 	def Energy(pose):
 		''' Transmits what is happening to a structure in PyRosetta to PyMol '''
 		''' Shows each residue's energy (red = high) (blue = low) '''
@@ -176,15 +197,15 @@ class PyMol():
 		pymol.apply(pose)
 		pymol.send_energy(pose)
 
-#4 - Get Score of Structure
+#5 - Get Score of Structure
 class Score():
-	#4.1 - Get Score For The Whole Structure
+	#5.1 - Get Score For The Whole Structure
 	def ALL(pose):
 		''' Scores a protein's structure '''
 		''' Returns an integer as the protein's score '''
 		scorefxn = get_fa_scorefxn()	#Load the score function
 		return(scorefxn(pose))		#Score the portein and print its value
-	#4.2 - Get Score For Each Single Residue
+	#5.2 - Get Score For Each Single Residue
 	def AA(pose):
 		''' Scores each single amino acid within a protein's structure seperatly'''
 		''' Returns a tuple with list of Residue numbers [0], Residue Types [1], Scores [2] '''
@@ -206,7 +227,7 @@ class Score():
 		#List of residue numbers [0], Residue Types [1], Scores [2]
 		return(Number , Residue , Score)
 
-#5 - PSIPRED
+#6 - PSIPRED
 def PSIPRED(pose):
 	''' Submits an amino acid sequence to the PsiPred server at UCL for accurate secondary structure prediction '''
 	''' Generates the PSIPRED.psipred file. First three lines are the prediction, last line is the actual protein's secondary structures for comparison '''
@@ -288,7 +309,7 @@ def PSIPRED(pose):
 	PSI.write('.PDB: ' + ss)
 	PSI.close()
 
-#6 - RosettaRelax
+#7 - RosettaRelax
 def Relax(pose):
 	''' Relaxes a structure '''
 	''' Updates the original pose with the relaxed pose '''
@@ -297,7 +318,7 @@ def Relax(pose):
 	relax.set_scorefxn(scorefxn)
 	relax.apply(pose)
 
-#7 - SASA
+#8 - SASA
 def SASA(pose):
 	''' Calculates the different layers (Surface, Boundery, Core) of a structure according its SASA (solvent-accessible surface area) '''
 	''' Returns three lists Surface amino acids = [0] , Boundery amino acids = [1] , Core amino acids = [2] '''
@@ -364,9 +385,9 @@ def SASA(pose):
 	os.remove('ToDesign.pdb')						#Keep working directory clean
 	return(surface , boundery , core)
 
-#8 - RosettaDesign
+#9 - RosettaDesign
 class Design():
-	#8.1 - Design Whole Structure All At Once
+	#9.1 - Design Whole Structure All At Once
 	def Whole(pose):
 		''' Applies RosettaDesign to change the whole structure's amino acids (the whole structure all at once) while maintaining the same backbone '''
 		''' Just updates the pose with the new structure '''
@@ -387,7 +408,7 @@ class Design():
 		print(score1_original_before_relax)
 		print(score2_original_after_relax)
 		print(score3_of_design_after_relax)
-	#8.2 - Design The Structure Once Layer At A Time
+	#9.2 - Design The Structure Once Layer At A Time
 	def Layer(pose):
 		''' Applies RosettaDesign to change the whole structure's amino acids (one layer at a time) while maintaining the same backbone. It is efficient and faster than the previous method (Design_Full) '''
 		''' Just updates the pose with the new structure '''
@@ -444,7 +465,7 @@ class Design():
 		print(score1_original_before_relax)
 		print(score2_original_after_relax)
 		print(score3_of_design_after_relax)
-	#8.3 - Design The Structure One Layer At A Time Moving Towards A Tightly Packed Core With Every Loop
+	#9.3 - Design The Structure One Layer At A Time Moving Towards A Tightly Packed Core With Every Loop
 	def Pack(pose):
 		''' Applies FastDesign to change the whole structure's amino acids (one layer at a time as well as designing towards an optimally packed core) while maintaining the same backbone. Should be faster than the Whole method and results in a better final structure than the Layer method '''
 		''' Generates the Designed.pdb file '''
@@ -504,7 +525,7 @@ class Design():
 		print('Original Structure Score:' , '\t' , score1_original_before_relax)
 		print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
 		print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
-	#8.4 - Design The Structure One Layer At A Time, Except For A Desired Motif, Moving Towards A Tightly Packed Core With Every Loop
+	#9.4 - Design The Structure One Layer At A Time, Except For A Desired Motif, Moving Towards A Tightly Packed Core With Every Loop
 	def Motif(pose , Motif_From , Motif_To):
 		''' Applies RosettaDesign to change the structure's amino acids (one layer at a time - like in the Design_Layer method) except for a desired continuous motif sequence while maintaining the same backbone '''
 		''' Just updates the pose with the new structure '''
@@ -568,16 +589,16 @@ class Design():
 		print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
 		print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
 
-#9 - Find RMDS Between Two Structures
+#10 - Find RMDS Between Two Structures
 def RMSD(pose1 , pose2):
 	''' To calculate the RMDS between two poses '''
 	''' Returns value as integer '''
 	RMSD = rosetta.core.scoring.CA_rmsd(pose1 , pose2)
 	return(RMSD)
 
-#10 - Fragment Generation and Identification
+#11 - Fragment Generation and Identification
 class Fragment():
-	#10.1 - Make The 3-mer and 9-mer Fragment Files
+	#11.1 - Make The 3-mer and 9-mer Fragment Files
 	def Make(pose):
 		''' Submits the pose to the Robetta Server (http://www.robetta.org) for fragment generation that are used for the Abinitio folding simulation '''
 		''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
@@ -626,7 +647,7 @@ class Fragment():
 		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
 		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
 		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
-	#10.2 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
+	#11.2 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
 	def Quality(pose):
 		''' Measures the quality of the 9-mer fragment files before an Abinitio folding simulation '''
 		''' Returns the number of good fragments (below 1Å) as integer '''
@@ -637,7 +658,7 @@ class Fragment():
 		calc = FragQualCalculator(fragset , 1.0 , 30.0)
 		frags = calc.get('num_goodfrag' , pose)
 		return(frags)
-	#10.3 - Calculate The Best Fragment's RMSD At Each Position And Plot The Result
+	#11.3 - Calculate The Best Fragment's RMSD At Each Position And Plot The Result
 	def RMSD(pose):
 		''' Measures the RMSD for each fragment at each position and plots the lowest RMSD fragment for each positon '''
 		''' Generates an RMSD vs Position PDF plot '''
@@ -715,7 +736,7 @@ exit""")
 		os.system('gnuplot < gnuplot_sets')
 		os.remove('gnuplot_sets')
 		os.remove('temp.dat')
-	#Calculates The Average RMSD of The Fragments
+	#11.4 - Calculates The Average RMSD of The Fragments
 	def Average():
 		''' Uses the RMSDvsPosition.dat to average out the fragment RMSD over the entire protein structure. Can only be used after the Fragment.RMSD() function '''
 		''' Prints out the average RMSD '''
@@ -729,7 +750,49 @@ exit""")
 		Average_RMSD = value / count
 		return(Average_RMSD)
 
-#11 - Denovo Design
+#12 - Grafting
+def Graft(receptor , motif , scaffold):
+	''' Grafts a motif onto a protein scaffold structure '''
+	''' Generates structure.pdb '''
+	scorefxn = get_fa_scorefxn()
+	print(scorefxn(scaffold))
+	mover = pyrosetta.rosetta.protocols.motif_grafting.movers.MotifGraftMover()
+	mover.init_parameters(receptor , motif , 1.0 , 2 , 5 , '0:0' , '0:0' , 'ALA' , '3:4:5:6' , True , False , True , False , False , True , False)
+	'''
+	context_structure="receptor.pdb"
+	motif_structure="motif.pdb"
+	RMSD_tolerance="1.0"
+	NC_points_RMSD_tolerance="2"
+	clash_score_cutoff="5"
+	combinatory_fragment_size_delta="0:0"
+	max_fragment_replacement_size_delta="0:0"
+	clash_test_residue="ALA"
+	hotspots="3:4:5:6"
+	full_motif_bb_alignment="True"
+	allow_independent_alignment_per_fragment="False"
+	graft_only_hotspots_by_replacement="True"
+	only_allow_if_N_point_match_aa_identity="False"
+	only_allow_if_C_point_match_aa_identity="Flase"
+	revert_graft_to_native_sequence="True"
+	allow_repeat_same_graft_output="False"
+	'''
+	mover.apply(scaffold)
+	print(scorefxn(scaffold))
+	scaffold.dump_pdb('temp.pdb')
+	#Extract grafted structure
+	pdb = open('temp.pdb' , 'r')
+	Structure = open('structure.pdb' , 'w')
+	for line in pdb:
+		linesplit = line.split()
+		if linesplit != []:
+			if linesplit[0] == 'ATOM':
+				if linesplit[4] == 'B':
+					Structure.write(line)
+	Structure.close()
+	#Keep working directory clean
+	os.remove('temp.pdb')
+
+#13 - Denovo Design
 def DeNovo(number_of_output):
 	''' Preforms De Novo Design on a protein's structure using the BluePrintBDR Mover. Generates only structures with helices (no sheet) '''
 	''' Generates user defined number of DeNovo_#.pdb files each with a different structure '''
@@ -787,40 +850,11 @@ def DeNovo(number_of_output):
 			continue
 	PoseFinal.dump_pdb('DeNovo.pdb')
 	os.remove('temp.pdb')
-
-#12 - Grafting
-def Graft(receptor , motif , scaffold):
-	''' Grafts a motif onto a protein scaffold structure '''
-	''' Generates structure.pdb '''
-	scorefxn = get_fa_scorefxn()
-	print(scorefxn(scaffold))
-	mover = pyrosetta.rosetta.protocols.motif_grafting.movers.MotifGraftMover()
-	mover.init_parameters(receptor , motif , 1.0 , 2 , 5 , '0:0' , '0:0' , 'ALA' , '3:4:5:6' , True , False , True , False , False , True , False)
-		'''
-		context_structure="receptor.pdb"
-		motif_structure="motif.pdb"
-		RMSD_tolerance="1.0"
-		NC_points_RMSD_tolerance="2"
-		clash_score_cutoff="5"
-		combinatory_fragment_size_delta="0:0"
-		max_fragment_replacement_size_delta="0:0"
-		clash_test_residue="ALA"
-		hotspots="3:4:5:6"
-		full_motif_bb_alignment="True"
-		allow_independent_alignment_per_fragment="False"
-		graft_only_hotspots_by_replacement="True"
-		only_allow_if_N_point_match_aa_identity="False"
-		only_allow_if_C_point_match_aa_identity="Flase"
-		revert_graft_to_native_sequence="True"
-		allow_repeat_same_graft_output="False"
-		'''
-	mover.apply(scaffold)
-	print(scorefxn(scaffold))
-	scaffold.dump_pdb('structure.pdb')
 #--------------------------------------------------------------------------------------------------------------------------------------
 #List of All Functions And Their Arguments
 '''
 Motif(Protein , Chain , Motif_from , Motif_to)
+Receptor(Protein , RecChain)
 PSIPRED(pose)
 print(Decision(score_before , score_after))
 Relax(pose)
@@ -830,9 +864,8 @@ print(Score.AA(pose))
 PyMol.Start(pose)
 PyMol.Update(pose)
 PyMol.Energy(pose)
-DeNovo(1000)					#1. Comes first
-pose = pose_from_pdb('DeNovo.pdb')		#2. Then identify pose
-Design.Whole(pose)				#3. Then continue
+DeNovo(1000)					#Must be followed by pose = pose_from_pdb('DeNovo.pdb') to make other functions know about the pose
+Design.Whole(pose)
 Design.Layer(pose)
 Design.Pack(pose)
 Design.Motif(pose , Motif_from , Motif_to)
@@ -841,13 +874,15 @@ Fragment.Make(pose)
 print(Fragment.Quality(pose))
 Fragment.RMSD(pose)
 print(Fragment.Average())
-Requires pose = pose_from_pdb('scaffold.pdb')	#1. Comes first
-Graft('receptor.pdb' , 'motif.pdb' , pose)	#2. Then run grafting. Pose must be relaxed and designed after grafting
+Graft('receptor.pdb' , 'motif.pdb' , pose)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Protocol
 
-#Build The Scaffold Structure
+
+
+#1. Build Scaffold
+pose = pose_from_pdb('DeNovo.pdb')
 '''
 while True:
 	DeNovo(100)						#Build scaffold topology by De Novo Design
@@ -855,7 +890,30 @@ while True:
 	Design.Pack(pose)					#Sequence design of topology
 	Fragment.Make(pose)					#Generate fragments in preparation for Abinitio fold simulation
 	Fragment.RMSD(pose , 'aat000_09_05.200_v1_3')		#Plot fragment quality (all positions' RMSD should be < 1Å)
-	#Repeat if fragment quality is bad (Average RMSD > 2Å)
+	#Repeat if fragment quality is bad (average RMSD > 2Å)
+	if Fragment.Average() <= 2:
+		break
+	else:
+		continue
+'''
+#2. Isolate Motif
+Motif(Protein , Chain , Motif_from , Motif_to)
+
+#3. Isolate Receptor
+Receptor(Protein , RecChain)
+
+#4. Graft Motif onto Scaffold
+Graft('receptor.pdb' , 'motif.pdb' , pose)
+
+#5. Sequence Design The Structure Around The Motif
+Design.Motif(pose , Motif_from , Motif_to)
+'''
+#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
+while True:
+	Fragment.Make(pose)
+	Fragment.RMSD(pose)
+
+#7. Average RMSD Should Be < 2Å)
 	if Fragment.Average() <= 2:
 		break
 	else:
@@ -866,19 +924,6 @@ while True:
 
 
 
-#Isolate Motif
-#Motif(Protein , Chain , Motif_from , Motif_to)
-
-#Graft Motif onto Scaffold
-#Graft('receptor.pdb' , 'motif.pdb' , pose)
-
-#Sequence Design The Structure Around The Motif
-#Design.Motif(pose , Motif_from , Motif_to)
-
-#Generate Fragments in Preparation For Abinitio Fold Simulation and Plot Fragment Quality (all positions' RMSD should be < 1Å)
-#Fragment.Make(pose)
-#Fragment.RMSD(pose , 'aat000_09_05.200_v1_3')
-
-
-
-#python3 VaxDesign.py 2y7q B 36 37
+Fragment.Make(pose)
+Fragment.RMSD(pose)
+print(Fragment.Average())
