@@ -903,7 +903,6 @@ while True:
 	else:
 		continue
 '''
-
 #2. Isolate Motif
 Motif(Protein , Chain , Motif_from , Motif_to)
 
@@ -912,16 +911,23 @@ Receptor(Protein , RecChain)
 
 #4. Graft Motif onto Scaffold
 Graft('receptor.pdb' , 'motif.pdb' , pose)
-
-#5. Sequence Design The Structure Around The Motif
-#Design.Motif(pose , Motif_from , Motif_to)
 '''
-#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
+#5. Sequence Design The Structure Around The Motif
+home = os.getcwd()
+count = 0
 while True:
+	time.sleep(1)
+	count += 1
+	os.chdir(home)
+	os.mkdir('Attempt_' + str(count))
+	os.chdir(home + '/structure_' + str(count))
+	Design.Motif(pose , Motif_from , Motif_to)
+
+	#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
 	Fragment.Make(pose)
 	Fragment.RMSD(pose)
 
-#7. Average RMSD Should Be < 2Å
+	#7. Average RMSD Should Be < 2Å - If Not Then Repeat
 	if Fragment.Average() <= 2:
 		FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 		FragRMSD.write(Fragment.Average())
@@ -938,10 +944,10 @@ while True:
 
 
 
-
-#Fragment.Make(pose)
-#Fragment.RMSD(pose)
-#FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
-#FragRMSD.write(Fragment.Average())
-#FragRMSD.close()
+Design.Motif(pose , Motif_from , Motif_to)
+Fragment.Make(pose)
+Fragment.RMSD(pose)
+FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
+FragRMSD.write(Fragment.Average())
+FragRMSD.close()
 #python3 VaxDesign.py 2y7q A B 420 429
