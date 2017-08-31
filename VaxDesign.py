@@ -641,7 +641,7 @@ class Fragment():
 				continue
 		#3 - Download
 		sequence = pose.sequence()
-		fasta = Resfile = open('structure.fasta' , 'w')
+		fasta = open('structure.fasta' , 'w')
 		fasta.write(sequence)
 		fasta.close()
 		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
@@ -843,6 +843,8 @@ def DeNovo(number_of_output):
 		mover.dump_pdb_when_fail('')
 		mover.set_constraints_NtoC(-1.0)
 		mover.set_blueprint('blueprint')
+	#	sfxn = pyrosetta.create_score_function('ref2015_cst')
+	#	mover.set_constraint_file('structure.cst')
 		mover.apply(pose)
 		os.remove('blueprint')
 		#Calculate Radius of Gyration (Rg) and choose lowest Rg score
