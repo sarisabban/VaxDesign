@@ -32,7 +32,7 @@ Here is a [video](youtube.com/) that explains how to select a target site, how t
 The script protocol is as follows:
 1. Build Scaffold. --> STILL UNDER DEVELOPMENT --> I am having lots of trouble with De Novo Design (I have a very long temporary work around)
 2. Isolate Motif.
-3. Isolate The Receptor.
+3. Isolate Receptor.
 4. Graft Motif onto Scaffold.
 5. Sequence Design The Structure Around The Motif.
 6. Generate Fragments for Rosetta Abinitio Folding Simulation.
