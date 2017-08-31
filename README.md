@@ -32,4 +32,10 @@ This script has been last tested to work well with PyRosetta 4 Release 147 and u
 Here is a [video](youtube.com/) that explains how to select a target site, how the script functions, and what results you get. If I did not make a video yet, bug me until I make one.
 
 The script protocol is as follows:
-* STILL UNDER DEVELOPMENT
+1. Build Scaffold. --> STILL UNDER DEVELOPMENT --> I am having lots of trouble with De Novo Design (I have a very long temporary work around)
+2. Isolate Motif.
+3. Isolate The Receptor.
+4. Graft Motif onto Scaffold.
+5. Sequence Design The Structure Around The Motif.
+6. Generate Fragments for Rosetta Abinitio Folding Simulation.
+7. If Average Fragment RMSD is Higher Than 2Å Repeat Steps 5 and 6.
