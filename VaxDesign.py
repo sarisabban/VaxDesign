@@ -911,16 +911,15 @@ Receptor(Protein , RecChain)
 
 #4. Graft Motif onto Scaffold
 Graft('receptor.pdb' , 'motif.pdb' , pose)
-'''
+
 #5. Sequence Design The Structure Around The Motif
+'''
 home = os.getcwd()
-count = 0
-while True:
+for attempt in range(100):
 	time.sleep(1)
-	count += 1
 	os.chdir(home)
-	os.mkdir('Attempt_' + str(count))
-	os.chdir(home + '/structure_' + str(count))
+	os.mkdir('Attempt_' + str(attempt + 1))
+	os.chdir(home + '/Attempt_' + str(attempt + 1))
 	Design.Motif(pose , Motif_from , Motif_to)
 
 	#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
@@ -936,7 +935,6 @@ while True:
 	else:
 		continue
 '''
-
 
 
 
