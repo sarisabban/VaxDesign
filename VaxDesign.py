@@ -926,17 +926,14 @@ while True:
 	#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
 	Fragment.Make(pose)
 	Fragment.RMSD(pose)
+	FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
+	FragRMSD.write(Fragment.Average())
+	FragRMSD.close()
 
 	#7. Average RMSD Should Be < 2Å - If Not Then Repeat
 	if Fragment.Average() <= 2:
-		FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
-		FragRMSD.write(Fragment.Average())
-		FragRMSD.close()
 		break
 	else:
-		FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
-		FragRMSD.write(Fragment.Average())
-		FragRMSD.close()
 		continue
 '''
 
