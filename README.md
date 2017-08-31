@@ -10,10 +10,10 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 ## How To Use:
 1. Use the following command to run the script:
 
-`python3 VaxDesign.py REC_CHAIN PDBID CHAIN FROM TO`
+`python3 VaxDesign.py RCHAIN PDBID CHAIN FROM TO`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
-* RECEPTOR CHAIN = The chain where your receptor resides within the protein .pdb file
+* RCHAIN = The chain where your receptor resides within the protein .pdb file
 * CHAIN = The chain where your target site resides (not part of the receptor) within the protein .pdb file
 * FROM = the start of your target site
 * TO = the end of your target site
