@@ -598,8 +598,8 @@ def RMSD(pose1 , pose2):
 
 #11 - Fragment Generation and Identification
 class Fragment():
-	#11.1 - Make The 3-mer and 9-mer Fragment Files
-	def Make(pose):
+	#11.1 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File At Robetta Server
+	def MakeServer(pose):
 		''' Submits the pose to the Robetta Server (http://www.robetta.org) for fragment generation that are used for the Abinitio folding simulation '''
 		''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
 		sequence = pose.sequence()
@@ -647,22 +647,39 @@ class Fragment():
 		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
 		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
 		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
-	#11.2 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
+		os.rename('aat000_03_05.200_v1_3' , 'frags.200.3mers')
+		os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
+		#os.rename('t000_.psipred_ss2' , '.psipred.ss2')
+	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
+
+
+
+
+
+
+
+
+
+
+
+
+
+	#11.3 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
 	def Quality(pose):
 		''' Measures the quality of the 9-mer fragment files before an Abinitio folding simulation '''
 		''' Returns the number of good fragments (below 1Å) as integer '''
 		#Choose Fragment
 		fragset = ConstantLengthFragSet(9)						#Only use 9-mer because 3-mer is not informative enough
-		fragset.read_fragment_file('aat000_09_05.200_v1_3')
+		fragset.read_fragment_file('frags.200.9mers')
 		#Run Calculator
 		calc = FragQualCalculator(fragset , 1.0 , 30.0)
 		frags = calc.get('num_goodfrag' , pose)
 		return(frags)
-	#11.3 - Calculate The Best Fragment's RMSD At Each Position And Plot The Result
+	#11.4 - Calculate The Best Fragment's RMSD At Each Position And Plot The Result
 	def RMSD(pose):
 		''' Measures the RMSD for each fragment at each position and plots the lowest RMSD fragment for each positon '''
 		''' Generates an RMSD vs Position PDF plot '''
-		frag = open('aat000_09_05.200_v1_3' , 'r')
+		frag = open('frags.200.9mers' , 'r')
 		rmsd = open('temp.dat' , 'w')
 		for line in frag:
 			if line.startswith(' position:'):
@@ -679,7 +696,7 @@ class Fragment():
 			frames = FrameList()
 			#Setup the 9-mer fragment (9-mer is better than 3-mer for this analysis)
 			fragset = ConstantLengthFragSet(9)
-			fragset.read_fragment_file('aat000_09_05.200_v1_3')
+			fragset.read_fragment_file('frags.200.9mers')
 			fragset.frames(count , frames)
 			#Setup the MoveMap
 			movemap = MoveMap()
@@ -736,7 +753,7 @@ exit""")
 		os.system('gnuplot < gnuplot_sets')
 		os.remove('gnuplot_sets')
 		os.remove('temp.dat')
-	#11.4 - Calculates The Average RMSD of The Fragments
+	#11.5 - Calculates The Average RMSD of The Fragments
 	def Average():
 		''' Uses the RMSDvsPosition.dat to average out the fragment RMSD over the entire protein structure. Can only be used after the Fragment.RMSD() function '''
 		''' Prints out the average RMSD '''
@@ -879,7 +896,8 @@ Design.Layer(pose)
 Design.Pack(pose)
 Design.Motif(pose , Motif_from , Motif_to)
 print(RMSD(pose1 , pose2))
-Fragment.Make(pose)
+Fragment.MakeServer(pose)
+Fragment.MakeLocal(pose)
 print(Fragment.Quality(pose))
 Fragment.RMSD(pose)
 print(Fragment.Average())
@@ -898,7 +916,7 @@ while True:
 	pose = pose_from_pdb('DeNovo.pdb')			#Identify pose
 	Design.Pack(pose)					#Sequence design of topology
 	Fragment.Make(pose)					#Generate fragments in preparation for Abinitio fold simulation
-	Fragment.RMSD(pose , 'aat000_09_05.200_v1_3')		#Plot fragment quality (all positions' RMSD should be < 1Å)
+	Fragment.RMSD(pose)					#Plot fragment quality (all positions' RMSD should be < 1Å)
 	#Repeat if fragment quality is bad (average RMSD > 2Å)
 	if Fragment.Average() <= 2:
 		break
@@ -925,7 +943,7 @@ for attempt in range(100):
 	Design.Motif(pose , Motif_from , Motif_to)
 
 	#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
-	Fragment.Make(pose)
+	Fragment.MakeServer(pose)
 	Fragment.RMSD(pose)
 	FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 	FragRMSD.write(Fragment.Average())
@@ -942,7 +960,7 @@ for attempt in range(100):
 
 
 Design.Motif(pose , Motif_from , Motif_to)
-Fragment.Make(pose)
+Fragment.MakeServer(pose)
 Fragment.RMSD(pose)
 FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 FragRMSD.write(Fragment.Average())
