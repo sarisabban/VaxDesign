@@ -10,6 +10,9 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 `sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4`
 
+3. Download the vall.jul19.2011.gz database (467 MB):
+`wget `
+
 ## How To Use:
 1. Use the following command to run the script:
 
@@ -651,19 +654,47 @@ class Fragment():
 		os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
 		#os.rename('t000_.psipred_ss2' , '.psipred.ss2')
 	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
-
-
-
-
-
-
-
-
-
-
-
-
-
+	def MakeLocal(pose):
+		''' Preforms fragment picking and secondary structure prediction locally '''
+		''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
+		#Generate blueprint file
+		filename = 'structure.pdb'
+		sslist=list()
+		p = Bio.PDB.PDBParser()
+		structure = p.get_structure('X', filename)
+		model = structure[0]
+		dssp = Bio.PDB.DSSP(model, filename)
+		for x in dssp:
+			if x[2]=='G' or x[2]=='H' or x[2]=='I':
+				y = x[1] + ' ' + 'H'
+			elif x[2]=='B' or x[2]=='E':
+				y= x[1] + ' ' + 'S'
+			else:
+				y= x[1] + ' ' + 'L'
+			sslist.append(y)
+		blueprintfile = open('blueprint' , 'w')
+		count = 0
+		for ss in sslist:
+			count += 1
+			blueprintfile.write(str(count) + ' ' + ss + '\n')
+		blueprintfile.close()
+		#Generate FASTA file
+		sequence = pose.sequence()
+		fasta = open('structure.fasta' , 'w')
+		fasta.write(sequence)
+		fasta.close()
+		#Generate PSIPRED prediction file
+		psipred = pyrosetta.rosetta.core.io.external.PsiPredInterface('')
+		psipred.run_psipred(pose , 'blueprint')
+		os.remove('blueprint')
+		#Generate fragment files
+		for frag in [3 , 9]:
+			init('-in::file::fasta structure.fasta -in::file::s structure.pdb -frags::frag_sizes ' + str(frag) + ' -frags::n_candidates 1000 -frags:write_ca_coordinates -frags::n_frags 200')
+			fregment = pyrosetta.rosetta.protocols.frag_picker.FragmentPicker()
+			fregment.parse_command_line()
+			fregment.read_vall('vall.jul19.2011.gz')
+			fregment.bounded_protocol()
+			fregment.save_fragments()
 	#11.3 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
 	def Quality(pose):
 		''' Measures the quality of the 9-mer fragment files before an Abinitio folding simulation '''
@@ -682,7 +713,7 @@ class Fragment():
 		frag = open('frags.200.9mers' , 'r')
 		rmsd = open('temp.dat' , 'w')
 		for line in frag:
-			if line.startswith(' position:'):
+			if line.lstrip().startswith('position:'):
 				line = line.split()
 				size = line[1]
 		frag.close()
@@ -915,7 +946,7 @@ while True:
 	DeNovo(100)						#Build scaffold topology by De Novo Design
 	pose = pose_from_pdb('DeNovo.pdb')			#Identify pose
 	Design.Pack(pose)					#Sequence design of topology
-	Fragment.Make(pose)					#Generate fragments in preparation for Abinitio fold simulation
+	Fragment.MakeLocal(pose)				#Generate fragments in preparation for Abinitio fold simulation
 	Fragment.RMSD(pose)					#Plot fragment quality (all positions' RMSD should be < 1Å)
 	#Repeat if fragment quality is bad (average RMSD > 2Å)
 	if Fragment.Average() <= 2:
@@ -943,7 +974,7 @@ for attempt in range(100):
 	Design.Motif(pose , Motif_from , Motif_to)
 
 	#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
-	Fragment.MakeServer(pose)
+	Fragment.MakeLocal(pose)
 	Fragment.RMSD(pose)
 	FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 	FragRMSD.write(Fragment.Average())
