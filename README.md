@@ -7,6 +7,9 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 `sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4`
 
+3. Download the vall.jul19.2011.gz database (467 MB). This link is temporary until the database is included with PyRosetta:
+`wget `
+
 ## How To Use:
 1. Use the following command to run the script:
 
@@ -27,7 +30,7 @@ This script autonomously designs a vaccine from a user specified target site. Th
 
 This script has been last tested to work well with PyRosetta 4 Release 147 and using Python 3.5. If you use this script on a newer PyRosetta or Python version and it fails please notify the author to get it updated.
 
-Here is a [video](youtube.com/) that explains how to select a target site, how the script functions, and what results you get. If I did not make a video yet, bug me until I make one.
+Here is a [video](youtube.com/) that explains how to select a target site, how the script functions, and what results you sould get. If I did not make a video yet, bug me until I make one.
 
 The script protocol is as follows:
 1. Build Scaffold. --> STILL UNDER DEVELOPMENT --> I am having lots of trouble with De Novo Design (I have a very long temporary work around)
