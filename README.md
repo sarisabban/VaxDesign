@@ -4,7 +4,6 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
 2. Use the following commands (in GNU/Linux) to install all nessesary Python libraries for this script to run successfully:
-
 `sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4`
 
 3. Download the vall.jul19.2011.gz database (467 MB). This link is temporary until the database is included with PyRosetta:
@@ -12,7 +11,6 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 ## How To Use:
 1. Use the following command to run the script:
-
 `python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
