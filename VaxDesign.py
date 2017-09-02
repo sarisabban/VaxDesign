@@ -12,7 +12,7 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 3. Download the vall.jul19.2011.gz database (467 MB). This link is temporary until the database is included with PyRosetta:
 
-`wget `
+`wget https://www.dropbox.com/s/4tcpq5vscqst5ww/vall.jul19.2011.gz`
 
 ## How To Use:
 1. Use the following command to run the script:
