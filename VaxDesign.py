@@ -6,7 +6,7 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
-2. Use the following commands (in GNU/Linux) to install all nessesary Python libraries for this script to run successfully:
+2. Use the following commands (in GNU/Linux) to install all necessary Python libraries for this script to run successfully:
 
 `sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4`
 
