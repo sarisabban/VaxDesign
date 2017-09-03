@@ -969,13 +969,20 @@ for attempt in range(100):
 		continue
 '''
 
-
-
-
 Design.Motif(pose , Motif_from , Motif_to)
+
+Fragment.MakeLocal(pose)
+Fragment.RMSD(pose)
+FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
+FragRMSD.write(Fragment.Average())
+FragRMSD.close()
+os.rename('plot_frag.pdf' , 'plotlocal.pdf')
+
 Fragment.MakeServer(pose)
 Fragment.RMSD(pose)
 FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 FragRMSD.write(Fragment.Average())
 FragRMSD.close()
+os.rename('plot_frag.pdf' , 'plotserver.pdf')
+
 #python3 VaxDesign.py 2y7q A B 420 429
