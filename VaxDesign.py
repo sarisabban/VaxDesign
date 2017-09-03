@@ -829,7 +829,7 @@ def Graft(receptor , motif , scaffold):
 	#Keep working directory clean
 	os.remove('temp.pdb')
 
-#13 - Denovo Design
+#13 - De Novo Design
 def DeNovo(number_of_output):
 	''' Preforms De Novo Design on a protein's structure using the BluePrintBDR Mover. Generates only structures with helices (no sheet) '''
 	''' Generates user defined number of DeNovo_#.pdb files each with a different structure '''
