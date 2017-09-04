@@ -23,6 +23,9 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 * TO = The end of your target site
 * VALL = The path to the vall.jul19.2011.gz database
 
+Example:
+`python3 VaxDesign.py 2y7q A B 420 429 /home/acresearch/rosetta_src_2017.08.59291_bundle/tools/fragment_tools/vall.jul19.2011.gz`
+
 2. Calculation time is about 72 hours on a normal desktop computer.
 3. Access to the internet is a requirement since the script will be sending and retrieving data from several servers.
 4. Use [this Rosetta Abinitio script](https://github.com/sarisabban/RosettaAbinitio) to simulate the folding of the final designed vaccine's protein structure. An HPC (High Preformance Computer) and the original C++ [Rosetta](https://www.rosettacommons.org/) are required for this step.
