@@ -791,7 +791,7 @@ exit""")
 #12 - Grafting
 def Graft(receptor , motif , scaffold):
 	''' Grafts a motif onto a protein scaffold structure '''
-	''' Generates structure.pdb '''
+	''' Generates structure.pdb and returns a tuple [0] is the residue number where the motif starts and [1] where it ends '''
 	scorefxn = get_fa_scorefxn()
 	print(scorefxn(scaffold))
 	mover = pyrosetta.rosetta.protocols.motif_grafting.movers.MotifGraftMover()
@@ -849,9 +849,17 @@ def Graft(receptor , motif , scaffold):
 			num += 1			
 		final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
 		AA2 = AA1
-		thenewfile.write(final_line)				#Write to new file called motif.pdb
+		thenewfile.write(final_line)			#Write to new file called motif.pdb
 	thenewfile.close()
 	os.remove('temp2.pdb')
+	#Identify start and finish residue number of inserted motif
+	motifpose = pose_from_pdb('motif.pdb')			#Input motif structure as a pose
+	graftpose = pose_from_pdb('grafted.pdb')		#Input graft structure as a pose
+	MOTIF = motifpose.sequence()				#Get motif sequence
+	GRAFT = graftpose.sequence()				#Get graft sequence
+	start = GRAFT.index(MOTIF) + 1				#Identify start residue
+	finish = start + len(MOTIF) - 1				#Identify end residue
+	return((start , finish))				#Return values
 
 #13 - De Novo Design
 def DeNovo(number_of_output):
@@ -938,7 +946,7 @@ Fragment.MakeLocal(pose)
 print(Fragment.Quality(pose))
 Fragment.RMSD(pose)
 print(Fragment.Average())
-Graft('receptor.pdb' , 'motif.pdb' , pose)
+MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Protocol
@@ -968,6 +976,10 @@ Receptor(Protein , RecChain)
 
 #4. Graft Motif onto Scaffold
 Graft('receptor.pdb' , 'motif.pdb' , pose)
+MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
+print(MotifPosition[0])
+print(MotifPosition[1])
+
 
 #5. Sequence Design The Structure Around The Motif
 '''
@@ -993,11 +1005,13 @@ for attempt in range(60):
 	else:
 		continue
 '''
+
+'''
 pose = pose_from_pdb('grafted.pdb')
 os.remove('motif.pdb')
 os.remove('receptor.pdb')
 os.remove('grafted.pdb')
-Design.Motif(pose , Motif_from , Motif_to)#<----------wrong Motif_from and Motif_to (the numbers are of the original RCSB file not the new grafted file)
+Design.Motif(pose , MotifPosition[0] , MotifPosition[1])
 pose = pose_from_pdb('structure.pdb')
 
 Fragment.MakeLocal(pose)
@@ -1017,3 +1031,4 @@ FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 FragRMSD.write(Fragment.Average())
 FragRMSD.close()
 os.rename('plot_frag.pdf' , 'plotserver.pdf')
+'''
