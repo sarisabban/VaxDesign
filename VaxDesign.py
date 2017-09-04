@@ -17,13 +17,14 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 ## How To Use:
 1. Use the following command to run the script:
 
-`python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO`
+`python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO VALL`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
 * RCHAIN = The chain where your receptor resides within the protein .pdb file
 * CHAIN = The chain where your target site resides (not part of the receptor) within the protein .pdb file
-* FROM = the start of your target site
-* TO = the end of your target site
+* FROM = The start of your target site
+* TO = The end of your target site
+* VALL = The path to the vall.jul19.2011.gz database
 
 2. Calculation time is about 72 hours on a normal desktop computer.
 3. Access to the internet is a requirement since the script will be sending and retrieving data from several servers.
@@ -89,6 +90,7 @@ RecChain	= sys.argv[2]
 Chain		= sys.argv[3]
 Motif_from	= sys.argv[4]
 Motif_to	= sys.argv[5]
+Vall		= sys.argv[6]
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Functions
 
@@ -506,7 +508,7 @@ class Design():
 		Relax(pose)									#Relax structure
 		#D - Output Result
 		score3_of_design_after_relax = scorefxn(pose)					#Measure score of designed pose
-		pose.dump_pdb('Designed.pdb')							#Export final pose into a .pdb structure file
+		pose.dump_pdb('structure.pdb')							#Export final pose into a .pdb structure file
 		print('---------------------------------------------------------')
 		print('Original Structure Score:' , '\t' , score1_original_before_relax)
 		print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
@@ -570,7 +572,7 @@ class Design():
 		Relax(pose)									#Relax structure
 		#D - Output result
 		score3_of_design_after_relax = scorefxn(pose)					#Measure score of designed pose
-		pose.dump_pdb('Designed.pdb')							#Export final pose into a .pdb structure file
+		pose.dump_pdb('structure.pdb')							#Export final pose into a .pdb structure file
 		print('---------------------------------------------------------')
 		print('Original Structure Score:' , '\t' , score1_original_before_relax)
 		print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
@@ -676,7 +678,7 @@ class Fragment():
 			init('-in::file::fasta structure.fasta -in::file::s structure.pdb -frags::frag_sizes ' + str(frag) + ' -frags::n_candidates 1000 -frags:write_ca_coordinates -frags::n_frags 200')
 			fregment = pyrosetta.rosetta.protocols.frag_picker.FragmentPicker()
 			fregment.parse_command_line()
-			fregment.read_vall('vall.jul19.2011.gz')
+			fregment.read_vall(Vall)
 			fregment.bounded_protocol()
 			fregment.save_fragments()
 	#11.3 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
@@ -832,7 +834,7 @@ def Graft(receptor , motif , scaffold):
 	os.remove('temp.pdb')
 	#Renumber .pdb file starting at 1
 	newpdb = open('temp2.pdb' , 'r')
-	thenewfile = open('structure.pdb' , 'w')
+	thenewfile = open('grafted.pdb' , 'w')
 	count = 0
 	num = 0
 	AA2 = None
@@ -965,9 +967,9 @@ Graft('receptor.pdb' , 'motif.pdb' , pose)
 
 #5. Sequence Design The Structure Around The Motif
 '''
-pose = pose_from_pdb('structure.pdb')
+pose = pose_from_pdb('grafted.pdb')
 home = os.getcwd()
-for attempt in range(100):
+for attempt in range(60):
 	time.sleep(1)
 	os.chdir(home)
 	os.mkdir('Attempt_' + str(attempt + 1))
@@ -987,7 +989,7 @@ for attempt in range(100):
 	else:
 		continue
 '''
-pose = pose_from_pdb('structure.pdb')
+pose = pose_from_pdb('grafted.pdb')
 Design.Motif(pose , Motif_from , Motif_to)
 
 Fragment.MakeLocal(pose)
@@ -1004,4 +1006,4 @@ FragRMSD.write(Fragment.Average())
 FragRMSD.close()
 os.rename('plot_frag.pdf' , 'plotserver.pdf')
 
-#python3 VaxDesign.py 2y7q A B 420 429
+#python3 VaxDesign.py 2y7q A B 420 429 /home/acresearch/rosetta_src_2017.08.59291_bundle/tools/fragment_tools/vall.jul19.2011.gz
