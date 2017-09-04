@@ -642,7 +642,7 @@ class Fragment():
 		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
 		os.rename('aat000_03_05.200_v1_3' , 'frags.200.3mers')
 		os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
-		#os.rename('t000_.psipred_ss2' , '.psipred.ss2')
+		os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
 	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
 	def MakeLocal(pose , thefile):
 		''' Preforms fragment picking and secondary structure prediction locally '''
@@ -654,6 +654,7 @@ class Fragment():
 		fasta.close()
 		#Generate PSIPRED prediction file (http://bioinfadmin.cs.ucl.ac.uk/downloads/psipred/)
 #		os.system('')
+#		os.rename('' , 'pre.psipred.ss2')
 		#Generate Checkpoint file (ftp://ftp.ncbi.nih.gov/blast/executables/blast+/LATEST/)
 #		os.system('')
 		#Generate fragment files
@@ -954,9 +955,8 @@ Receptor(Protein , RecChain)
 
 #4. Graft Motif onto Scaffold
 MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
-
-#5. Sequence Design The Structure Around The Motif
 '''
+#5. Sequence Design The Structure Around The Motif
 pose = pose_from_pdb('grafted.pdb')
 home = os.getcwd()
 for attempt in range(60):
