@@ -7,9 +7,7 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 `sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4`
 
-3. Download the vall.jul19.2011.gz database (467 MB). This link is temporary until the database is included with PyRosetta:
-
-`wget https://www.dropbox.com/s/4tcpq5vscqst5ww/vall.jul19.2011.gz`
+3. The vall.jul19.2011.gz database is required to successfully run this script, the database can be found in the C++ [Rosetta](https://www.rosettacommons.org) software suite at path `{ROSETTA}/tools/fragment_tools/`, unfortunately it is currently not provided with PyRosetta therefore Rosetta needs to be downloaded separately,then uncompressed, to get the database. If you are only interested in getting the database, no need to compile Rosetta if you are not going to use it.
 
 ## How To Use:
 1. Use the following command to run the script:
