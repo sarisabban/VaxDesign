@@ -644,39 +644,18 @@ class Fragment():
 		os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
 		#os.rename('t000_.psipred_ss2' , '.psipred.ss2')
 	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
-	def MakeLocal(pose):
+	def MakeLocal(pose , thefile):
 		''' Preforms fragment picking and secondary structure prediction locally '''
 		''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
-		#Generate blueprint file
-		filename = 'structure.pdb'
-		sslist=list()
-		p = Bio.PDB.PDBParser()
-		structure = p.get_structure('X', filename)
-		model = structure[0]
-		dssp = Bio.PDB.DSSP(model, filename)
-		for x in dssp:
-			if x[2]=='G' or x[2]=='H' or x[2]=='I':
-				y = x[1] + ' ' + 'H'
-			elif x[2]=='B' or x[2]=='E':
-				y= x[1] + ' ' + 'S'
-			else:
-				y= x[1] + ' ' + 'L'
-			sslist.append(y)
-		blueprintfile = open('blueprint' , 'w')
-		count = 0
-		for ss in sslist:
-			count += 1
-			blueprintfile.write(str(count) + ' ' + ss + '\n')
-		blueprintfile.close()
 		#Generate FASTA file
 		sequence = pose.sequence()
 		fasta = open('structure.fasta' , 'w')
 		fasta.write(sequence)
 		fasta.close()
-		#Generate PSIPRED prediction file
-#		psipred = pyrosetta.rosetta.core.io.external.PsiPredInterface('')
-#		psipred.run_psipred(pose , 'blueprint')
-		os.remove('blueprint')
+		#Generate PSIPRED prediction file (http://bioinfadmin.cs.ucl.ac.uk/downloads/psipred/)
+#		os.system('')
+		#Generate Checkpoint file (ftp://ftp.ncbi.nih.gov/blast/executables/blast+/LATEST/)
+#		os.system('')
 		#Generate fragment files
 		for frag in [3 , 9]:
 			init('-in::file::fasta structure.fasta -in::file::s structure.pdb -frags::frag_sizes ' + str(frag) + ' -frags::n_candidates 1000 -frags:write_ca_coordinates -frags::n_frags 200')
@@ -990,7 +969,7 @@ for attempt in range(60):
 	pose = pose_from_pdb('structure.pdb')
 
 	#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
-	Fragment.MakeLocal(pose)
+	Fragment.MakeServer(pose)
 	Fragment.RMSD(pose)
 	FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 	FragRMSD.write(Fragment.Average())
@@ -1006,7 +985,7 @@ pose = pose_from_pdb('grafted.pdb')
 Design.Motif(pose , MotifPosition[0] , MotifPosition[1])
 pose = pose_from_pdb('structure.pdb')
 
-Fragment.MakeLocal(pose)
+Fragment.MakeLocal(pose , 'structure.pdb')
 Fragment.RMSD(pose)
 FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 FragRMSD.write(Fragment.Average())
