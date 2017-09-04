@@ -7,7 +7,9 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 `sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4`
 
-3. The vall.jul19.2011.gz database is required to successfully run this script, the database can be found in the C++ [Rosetta](https://www.rosettacommons.org) software suite at path `{ROSETTA}/tools/fragment_tools/`, unfortunately it is currently not provided with PyRosetta therefore Rosetta needs to be downloaded separately,then uncompressed, to get the database. If you are only interested in getting the database, no need to compile Rosetta if you are not going to use it.
+3. Download the vall.jul19.2011.gz database (467 MB). This link is temporary until the database is included with PyRosetta:
+
+`wget https://www.dropbox.com/s/4tcpq5vscqst5ww/vall.jul19.2011.gz`
 
 ## How To Use:
 1. Use the following command to run the script:
@@ -25,8 +27,8 @@ Example:
 
 `python3 VaxDesign.py 2y7q A B 420 429 /home/acresearch/rosetta_src_2017.08.59291_bundle/tools/fragment_tools/vall.jul19.2011.gz`
 
-2. Calculation time is about 72 hours on a normal desktop computer.
-3. Access to the internet is a requirement since the script will be sending and retrieving data from several servers.
+2. Calculation time is about 720 hours on a normal desktop computer.
+3. Access to the internet is a requirement since the script will be sending and retrieving data from some servers.
 4. Use [this Rosetta Abinitio script](https://github.com/sarisabban/RosettaAbinitio) to simulate the folding of the final designed vaccine's protein structure. An HPC (High Preformance Computer) and the original C++ [Rosetta](https://www.rosettacommons.org/) are required for this step.
 
 ## Description
