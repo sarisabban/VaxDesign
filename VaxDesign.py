@@ -905,8 +905,8 @@ def DeNovo(number_of_output):
 		mover.dump_pdb_when_fail('')
 		mover.set_constraints_NtoC(-1.0)
 		mover.set_blueprint('blueprint')
-	#	sfxn = pyrosetta.create_score_function('ref2015_cst')
-	#	mover.set_constraint_file('structure.cst')
+#		sfxn = pyrosetta.create_score_function('ref2015_cst')
+#		mover.set_constraint_file('structure.cst')
 		mover.apply(pose)
 		os.remove('blueprint')
 		#Calculate Radius of Gyration (Rg) and choose lowest Rg score
@@ -935,7 +935,7 @@ print(Score.AA(pose))
 PyMol.Start(pose)
 PyMol.Update(pose)
 PyMol.Energy(pose)
-DeNovo(1000)					#Must be followed by pose = pose_from_pdb('DeNovo.pdb') to make other functions know about the pose
+DeNovo(1000)
 Design.Whole(pose)
 Design.Layer(pose)
 Design.Pack(pose)
@@ -947,11 +947,10 @@ print(Fragment.Quality(pose))
 Fragment.RMSD(pose)
 print(Fragment.Average())
 MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
+Remember: DeNovo() , Graft() , Design.Motif() do not export the pose, therefore you must call the pose from the exported .pdb file after each function so the pose can be used by the subsequent function.
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Protocol
-
-
 
 #1. Build Scaffold
 pose = pose_from_pdb('DeNovo.pdb')
