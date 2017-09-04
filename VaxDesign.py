@@ -519,7 +519,7 @@ class Design():
 		Motif = list(range(int(Motif_From) , int(Motif_To) + 1))			#Identify motif residues
 		scorefxn = get_fa_scorefxn()							#Call the score function
 		score1_original_before_relax = scorefxn(pose)					#Measure score before relaxing
-#		Relax(pose)									#Relax structure
+		Relax(pose)									#Relax structure
 		score2_original_after_relax = scorefxn(pose)					#Measure score after relaxing
 		#B - FastDesign protocol							#Uses Generic Monte Carlo with PackStat as a filter to direct FastDesign towards an optimally packed structure core
 		chain = pose.pdb_info().chain(1)						#Identify chain
@@ -965,6 +965,7 @@ Graft('receptor.pdb' , 'motif.pdb' , pose)
 
 #5. Sequence Design The Structure Around The Motif
 '''
+pose = pose_from_pdb('structure.pdb')
 home = os.getcwd()
 for attempt in range(100):
 	time.sleep(1)
@@ -986,7 +987,7 @@ for attempt in range(100):
 	else:
 		continue
 '''
-
+pose = pose_from_pdb('structure.pdb')
 Design.Motif(pose , Motif_from , Motif_to)
 
 Fragment.MakeLocal(pose)
