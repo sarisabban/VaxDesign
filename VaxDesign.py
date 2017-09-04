@@ -460,6 +460,7 @@ class Design():
 		Relax(pose)									#Relax structure
 		score2_original_after_relax = scorefxn(pose)					#Measure score after relaxing
 		#B - FastDesign Protocol							#Uses Generic Monte Carlo with PackStat as a filter to direct FastDesign towards an optimally packed structure core
+		chain = pose.pdb_info().chain(1)						#Identify chain
 		layers = [2 , 1 , 0]								#Layer Identity from SASA Surface = [0] , Boundary = [1] , Core = [2]
 		for identity in layers:								#Loop through each layer
 			#1 - Setup The PackStat Filter
@@ -472,7 +473,7 @@ class Design():
 			Resfile.write('NATAA\n')
 			Resfile.write('start\n')
 			for line in layer:
-				Resfile.write(str(line) + ' A ALLAA\n')
+				Resfile.write(str(line) + ' ' + chain + ' ALLAA\n')
 			Resfile.close()
 			#4 - Setup The FastDesign Mover
 			task = TaskFactory()							#Setup the TaskFactory
@@ -518,9 +519,10 @@ class Design():
 		Motif = list(range(int(Motif_From) , int(Motif_To) + 1))			#Identify motif residues
 		scorefxn = get_fa_scorefxn()							#Call the score function
 		score1_original_before_relax = scorefxn(pose)					#Measure score before relaxing
-		Relax(pose)									#Relax structure
+#		Relax(pose)									#Relax structure
 		score2_original_after_relax = scorefxn(pose)					#Measure score after relaxing
 		#B - FastDesign protocol							#Uses Generic Monte Carlo with PackStat as a filter to direct FastDesign towards an optimally packed structure core
+		chain = pose.pdb_info().chain(1)						#Identify chain
 		layers = [2 , 1 , 0]								#Layer Identity from SASA Surface = [0] , Boundary = [1] , Core = [2]
 		for identity in layers:								#Loop through each layer
 			#1 - Setup the PackStat filter
@@ -535,7 +537,7 @@ class Design():
 			Resfile.write('NATAA\n')
 			Resfile.write('start\n')
 			for line in layer:
-				Resfile.write(str(line) + ' A ALLAA\n')
+				Resfile.write(str(line) + ' ' + chain +' ALLAA\n')
 			Resfile.close()
 			#5 - Setup the FastDesign mover
 			task = TaskFactory()							#Setup the TaskFactory
@@ -818,7 +820,7 @@ def Graft(receptor , motif , scaffold):
 	scaffold.dump_pdb('temp.pdb')
 	#Extract grafted structure
 	pdb = open('temp.pdb' , 'r')
-	Structure = open('structure.pdb' , 'w')
+	Structure = open('temp2.pdb' , 'w')
 	for line in pdb:
 		linesplit = line.split()
 		if linesplit != []:
@@ -828,6 +830,22 @@ def Graft(receptor , motif , scaffold):
 	Structure.close()
 	#Keep working directory clean
 	os.remove('temp.pdb')
+	#Renumber .pdb file starting at 1
+	newpdb = open('temp2.pdb' , 'r')
+	thenewfile = open('structure.pdb' , 'w')
+	count = 0
+	num = 0
+	AA2 = None
+	for line in newpdb:
+		count += 1					#Sequencially number atoms
+		AA1 = line[23:27]				#Sequencially number residues
+		if not AA1 == AA2:
+			num += 1			
+		final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
+		AA2 = AA1
+		thenewfile.write(final_line)				#Write to new file called motif.pdb
+	thenewfile.close()
+	os.remove('temp2.pdb')
 
 #13 - De Novo Design
 def DeNovo(number_of_output):
