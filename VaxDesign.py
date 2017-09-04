@@ -674,8 +674,8 @@ class Fragment():
 		fasta.write(sequence)
 		fasta.close()
 		#Generate PSIPRED prediction file
-		psipred = pyrosetta.rosetta.core.io.external.PsiPredInterface('')
-		psipred.run_psipred(pose , 'blueprint')
+#		psipred = pyrosetta.rosetta.core.io.external.PsiPredInterface('')
+#		psipred.run_psipred(pose , 'blueprint')
 		os.remove('blueprint')
 		#Generate fragment files
 		for frag in [3 , 9]:
@@ -975,11 +975,7 @@ Motif(Protein , Chain , Motif_from , Motif_to)
 Receptor(Protein , RecChain)
 
 #4. Graft Motif onto Scaffold
-Graft('receptor.pdb' , 'motif.pdb' , pose)
 MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
-print(MotifPosition[0])
-print(MotifPosition[1])
-
 
 #5. Sequence Design The Structure Around The Motif
 '''
@@ -990,7 +986,9 @@ for attempt in range(60):
 	os.chdir(home)
 	os.mkdir('Attempt_' + str(attempt + 1))
 	os.chdir(home + '/Attempt_' + str(attempt + 1))
-	Design.Motif(pose , Motif_from , Motif_to)
+	pose = pose_from_pdb('grafted.pdb')
+	Design.Motif(pose , MotifPosition[0] , MotifPosition[1])
+	pose = pose_from_pdb('structure.pdb')
 
 	#6. Generate Fragments in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
 	Fragment.MakeLocal(pose)
@@ -999,18 +997,13 @@ for attempt in range(60):
 	FragRMSD.write(Fragment.Average())
 	FragRMSD.close()
 
-	#7. Average RMSD Should Be < 2Å - If Not Then Repeat
+	#7. Average Fragment RMSD Should Be < 2Å - If Not Then Repeat
 	if Fragment.Average() <= 2:
 		break
 	else:
 		continue
 '''
-
-'''
 pose = pose_from_pdb('grafted.pdb')
-os.remove('motif.pdb')
-os.remove('receptor.pdb')
-os.remove('grafted.pdb')
 Design.Motif(pose , MotifPosition[0] , MotifPosition[1])
 pose = pose_from_pdb('structure.pdb')
 
@@ -1031,4 +1024,3 @@ FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
 FragRMSD.write(Fragment.Average())
 FragRMSD.close()
 os.rename('plot_frag.pdf' , 'plotserver.pdf')
-'''
