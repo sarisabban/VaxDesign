@@ -14,13 +14,14 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 ## How To Use:
 1. Use the following command to run the script:
 
-`python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO`
+`python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO VALL`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
 * RCHAIN = The chain where your receptor resides within the protein .pdb file
 * CHAIN = The chain where your target site resides (not part of the receptor) within the protein .pdb file
-* FROM = the start of your target site
-* TO = the end of your target site
+* FROM = The start of your target site
+* TO = The end of your target site
+* VALL = The path to the vall.jul19.2011.gz database
 
 2. Calculation time is about 72 hours on a normal desktop computer.
 3. Access to the internet is a requirement since the script will be sending and retrieving data from several servers.
