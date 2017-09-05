@@ -53,19 +53,20 @@ The script protocol is as follows:
 Output files are as follows:
 
 
-|    | File Name               | Description                                                                              |
-|----|-------------------------|------------------------------------------------------------------------------------------|
-| 1  | DeNovo.pdb              | Scaffold structure                                                                       |
-| 2  | motif.pdb	             | Original requested motif                                                                 |
-| 3  | receptor.pdb            | Original receptor that binds morif                                                       |
-| 4  | grafted.pdb             | Grafted motif to De Novo structure                                                       |
-| 5  | structure.pdb           | Sequence designed structure                                                              |
-| 6  | structure.fasta         | Fasta of Rosetta Designed structure                                                      |
-| 7  | frags.200.3mers         | 3-mer fragment of sequence designed structure from the Robetta server                    |
-| 8  | frags.200.9mers         | 9-mer fragment of sequence designed structure from the Robetta server                    |
-| 9  | pre.psipred.ss2     | PSIPRED secondary structure prediction of sequence designed structure from the Robetta server|
-| 10 | plot_frag.pdf           | Plot of the fragment quality RMSD vs Position                                            |
-| 11 | FragmentAverageRMSD.dat | Average RMSD of the fragments                                                            |
+|    | File Name               | Description                                                                                  |
+|----|-------------------------|----------------------------------------------------------------------------------------------|
+| 1  | DeNovo.pdb              | Scaffold structure                                                                           |
+| 2  | motif.pdb	       | Original requested motif                                                                     |
+| 3  | receptor.pdb            | Original receptor that binds morif                                                           |
+| 4  | grafted.pdb             | Grafted motif to De Novo structure                                                           |
+| 5  | structure.pdb           | Sequence designed structure                                                                  |
+| 6  | structure.fasta         | Fasta of Rosetta Designed structure                                                          |
+| 7  | frags.200.3mers         | 3-mer fragment of sequence designed structure from the Robetta server                        |
+| 8  | frags.200.9mers         | 9-mer fragment of sequence designed structure from the Robetta server                        |
+| 9  | pre.psipred.ss2         | PSIPRED secondary structure prediction of sequence designed structure from the Robetta server|
+| 10 | plot_frag.pdf           | Plot of the fragment quality RMSD vs Position                                                |
+| 11 | RMSDvsPosition.dat      | plot_frag.pdf's data                                                                         |
+| 12 | FragmentAverageRMSD.dat | Average RMSD of the fragments                                                                |
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 #Import Modules
