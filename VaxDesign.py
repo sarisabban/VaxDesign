@@ -6,32 +6,29 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
-2. Use the following commands (in GNU/Linux) to install all necessary Python libraries for this script to run successfully:
+2. Use the following command (in GNU/Linux) will install all necessary programs, python libraries, and databases required for this script to run successfully (approximately 3 hours to complete):
 
-`sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4`
+`python3 VaxDesign.py setup`
 
-3. Download the vall.jul19.2011.gz database (467 MB). This link is temporary until the database is included with PyRosetta:
-
-`wget https://www.dropbox.com/s/4tcpq5vscqst5ww/vall.jul19.2011.gz`
+3. The vall.jul19.2011.gz database is required to successfully run this script, but the database can only be found in the C++ [Rosetta](https://www.rosettacommons.org) software suite. Unfortunately it is currently not provided with PyRosetta therefore Rosetta needs to be downloaded separately, then uncompressed, to get the database. If you are only interested in getting the database, no need to compile Rosetta if you are not going to use it.
 
 ## How To Use:
 1. Use the following command to run the script:
 
-`python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO VALL`
+`python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
 * RCHAIN = The chain where your receptor resides within the protein .pdb file
 * CHAIN = The chain where your target site resides (not part of the receptor) within the protein .pdb file
 * FROM = The start of your target site
 * TO = The end of your target site
-* VALL = The path to the vall.jul19.2011.gz database
 
 Example:
 
-`python3 VaxDesign.py 2y7q A B 420 429 /home/acresearch/rosetta_src_2017.08.59291_bundle/tools/fragment_tools/vall.jul19.2011.gz`
+`python3 VaxDesign.py 2y7q A B 420 429`
 
 2. Calculation time is about 720 hours on a normal desktop computer.
-3. Access to the internet is a requirement since the script will be sending and retrieving data from some servers.
+3. Access to the internet is a requirement since the script will be sending and retrieving data from some servers (especially during setup).
 4. Use [this Rosetta Abinitio script](https://github.com/sarisabban/RosettaAbinitio) to simulate the folding of the final designed vaccine's protein structure. An HPC (High Preformance Computer) and the original C++ [Rosetta](https://www.rosettacommons.org/) are required for this step.
 
 ## Description
@@ -112,7 +109,6 @@ RecChain	= sys.argv[2]
 Chain		= sys.argv[3]
 Motif_from	= sys.argv[4]
 Motif_to	= sys.argv[5]
-Vall		= sys.argv[6]
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Functions
 
@@ -663,21 +659,7 @@ class Fragment():
 		os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
 	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
 	def MakeLocal(pose):
-		''' Preforms fragment picking locally. NOTE: the generated files cannot be used for Abinitio Fold Simulation because they are rudimentary, they are generated for a quick glimps as to whether the designed structure is good enough or not, if the designed structure is good enough (generates good low RMSD fragments) then the MakeServer function should be used (next function) to generate the proper 3-mer, 9mer, and PSIPRED files from the Robetta Server '''
-		''' Generates the 3-mer file and the 9-mer file '''
-		#Generate FASTA file
-		sequence = pose.sequence()
-		fasta = open('structure.fasta' , 'w')
-		fasta.write(sequence)
-		fasta.close()
-		#Generate fragment files
-		for frag in [3 , 9]:
-			init('-in::file::fasta structure.fasta -in::file::s structure.pdb -frags::frag_sizes ' + str(frag) + ' -frags::n_candidates 1000 -frags:write_ca_coordinates -frags::n_frags 200')
-			fregment = pyrosetta.rosetta.protocols.frag_picker.FragmentPicker()
-			fregment.parse_command_line()
-			fregment.read_vall(Vall)
-			fregment.bounded_protocol()
-			fregment.save_fragments()
+
 
 
 
@@ -882,7 +864,42 @@ def Graft(receptor , motif , scaffold):
 	finish = start + len(MOTIF) - 1				#Identify end residue
 	return((start , finish))				#Return values
 
-#13 - De Novo Design
+#13 - Setup Sources For This Script
+def Setup():
+	''' Sets up and installs are the required programs, libraries, and databases to allow this script to function '''
+	os.system('sudo apt update')
+	os.system('sudo apt full-upgrade')
+	os.system('sudo apt install python3-pip && sudo python3 -m pip install biopython')
+	home = os.getcwd()
+	os.system('sudo apt install ncbi-blast+')
+	os.system('wget http://bioinfadmin.cs.ucl.ac.uk/downloads/psipred/psipred.4.01.tar.gz')
+	os.system('tar xzvf psipred.4.01.tar.gz')
+	os.system('rm psipred.4.01.tar.gz')
+	os.chdir('psipred/src')
+	os.system('make')
+	os.system('make install')
+	os.chdir(home)
+	os.chdir('psipred/BLAST+')
+	result = []
+	for root , dirs , files in os.walk('/'):
+		if 'blastp' in files:
+			result.append(os.path.join(root))
+	directory = (result[0] + '/')
+	os.system("sed -i 's#/usr/local/bin#'" + directory + "# runpsipredplus")
+	os.system("sed -i 's#set execdir = ../bin#set execdir = " + home + "/psipred/bin#' runpsipredplus")
+	os.system("sed -i 's#set datadir = ../data#set datadir = " + home + "/psipred/data#' runpsipredplus")
+	os.chdir(home)
+	os.chdir('psipred')
+	os.system('wget http://bioinfadmin.cs.ucl.ac.uk/downloads/pfilt/pfilt1.5.tar.gz')
+	os.system('tar xzvf pfilt1.5.tar.gz')
+	os.system('rm pfilt1.5.tar.gz')
+	os.system('cc -O pfilt/pfilt.c -lm -o pfilt/pfilt')
+	os.system('wget ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref90.fasta.gz')
+	os.system('gunzip -v uniref90.fasta.gz')
+	os.system('pfilt/pfilt uniref90.fasta > uniref90filt')
+	os.system("makeblastdb -dbtype 'prot' -in uniref90filt -out uniref90filt")
+
+#14 - De Novo Design
 def DeNovo(number_of_output):
 	''' Preforms De Novo Design on a protein's structure using the BluePrintBDR Mover. Generates only structures with helices (no sheet) '''
 	''' Generates user defined number of DeNovo_#.pdb files each with a different structure '''
@@ -945,18 +962,17 @@ def DeNovo(number_of_output):
 #--------------------------------------------------------------------------------------------------------------------------------------
 #List of All Functions And Their Arguments
 '''
+Find('PyMOL-RosettaServer.py')
 Motif(Protein , Chain , Motif_from , Motif_to)
 Receptor(Protein , RecChain)
-PSIPRED(pose)
-print(Decision(score_before , score_after))
-Relax(pose)
-SASA(pose)
-print(Score.ALL(pose))
-print(Score.AA(pose))
 PyMol.Start(pose)
 PyMol.Update(pose)
 PyMol.Energy(pose)
-DeNovo(1000)
+print(Score.ALL(pose))
+print(Score.AA(pose))
+PSIPRED(pose)
+Relax(pose)
+SASA(pose)
 Design.Whole(pose)
 Design.Layer(pose)
 Design.Pack(pose)
@@ -968,10 +984,15 @@ print(Fragment.Quality(pose))
 Fragment.RMSD(pose)
 print(Fragment.Average())
 MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
+Setup()
+DeNovo(1000)
 Remember: DeNovo() , Graft() , Design.Motif() do not export the pose, therefore you must call the pose from the exported .pdb file after each function so the pose can be used by the subsequent function.
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Protocol
+
+#0. Setup
+#Setup()
 
 #1. Build Scaffold
 pose = pose_from_pdb('DeNovo.pdb')
@@ -1009,6 +1030,7 @@ for attempt in range(1):
 	pose = pose_from_pdb('structure.pdb')
 
 	#6. Generate Fragments Locally To Test Fragment Quality And Predict Abinitio Fold Simulation Success
+
 
 	#7. Average Fragment RMSD Should Be < 2Å - If Not Then Repeat
 	if Fragment.Average() <= 2:
