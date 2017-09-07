@@ -662,7 +662,7 @@ class Fragment():
 		os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
 		os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
 	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
-	def MakeLocal(pose , thefile):
+	def MakeLocal(pose):
 		''' Preforms fragment picking locally. NOTE: the generated files cannot be used for Abinitio Fold Simulation because they are rudimentary, they are generated for a quick glimps as to whether the designed structure is good enough or not, if the designed structure is good enough (generates good low RMSD fragments) then the MakeServer function should be used (next function) to generate the proper 3-mer, 9mer, and PSIPRED files from the Robetta Server '''
 		''' Generates the 3-mer file and the 9-mer file '''
 		#Generate FASTA file
@@ -678,6 +678,34 @@ class Fragment():
 			fregment.read_vall(Vall)
 			fregment.bounded_protocol()
 			fregment.save_fragments()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	#11.3 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
 	def Quality(pose):
 		''' Measures the quality of the 9-mer fragment files before an Abinitio folding simulation '''
@@ -974,29 +1002,16 @@ home = os.getcwd()
 for attempt in range(1):
 	time.sleep(1)
 	os.chdir(home)
+	pose = pose_from_pdb('grafted.pdb')
 	os.mkdir('Attempt_' + str(attempt + 1))
 	os.chdir(home + '/Attempt_' + str(attempt + 1))
-	pose = pose_from_pdb('grafted.pdb')
 	Design.Motif(pose , MotifPosition[0] , MotifPosition[1])
 	pose = pose_from_pdb('structure.pdb')
 
 	#6. Generate Fragments Locally To Test Fragment Quality And Predict Abinitio Fold Simulation Success
-	Fragment.MakeLocal(pose , 'structure.pdb')
-	Fragment.RMSD(pose)
-	FragRMSD = open('FragmentAverageRMSD.dat' , 'w')
-	FragRMSD.write('Local RMSD:' + '\t' + str(Fragment.Average()))
-	FragRMSD.close()
-	os.remove('plot_frag.pdf')
 
 	#7. Average Fragment RMSD Should Be < 2Å - If Not Then Repeat
 	if Fragment.Average() <= 2:
 		break
 	else:
 		continue
-
-#8. Generate Fragments At Robetta Server in Preparation For Abinitio Folding Simulation and Plot The Fragment's RMSD vs. Position Plot
-Fragment.MakeServer(pose)
-Fragment.RMSD(pose)
-FragRMSD = open('FragmentAverageRMSD.dat' , 'a')
-FragRMSD.write('Server RMSD:' + '\t' + str(Fragment.Average()))
-FragRMSD.close()
