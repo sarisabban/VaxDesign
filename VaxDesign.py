@@ -7,7 +7,7 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
 2. You will also need to install [Rosetta](https://www.rosettacommons.org/) as the website describes.
-3. Use the following command (in GNU/Linux) to download the necessary database (NCBI's nr database - 30GB) in the correct directory for this script to run successfully (approximately 3 hours to complete):
+3. Use the following command (in GNU/Linux) will install all necessary programs, python libraries, and databases required for this script to run successfully (approximately 3 hours to complete):
 
 `python3 VaxDesign.py setup`
 
@@ -865,7 +865,10 @@ def Graft(receptor , motif , scaffold):
 
 #13 - Setup Sources For This Script
 def Setup():
-	''' Downloads the NCBI's nr database '''
+	''' Sets up and installs are the required programs, libraries, and databases to allow this script to function '''
+	os.system('sudo apt update')
+	os.system('sudo apt full-upgrade')
+	os.system('sudo apt install python3-pip && sudo python3 -m pip install biopython')
 	result = []
 	for root , dirs , files in os.walk('/'):
 		if 'fragments.README' in files:
