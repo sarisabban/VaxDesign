@@ -658,6 +658,45 @@ class Fragment():
 		os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
 	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
 	def MakeLocal(pose):
+	''' Preforms fragment picking and secondary structure prediction locally '''
+	''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
+	#Generate the FASTA file
+	sequence = pose.sequence()
+	filename = 'structure.pdb'
+	fasta = open(filename[0] + '.fasta' , 'w')
+	fasta.write(sequence)
+	fasta.close()
+	#Find the Vall Database
+	result = []
+	for root , dirs , files in os.walk('/'):
+		if 'vall.jul19.2011.gz' in files:
+			result.append(os.path.join(root))
+	Vall = (result[0] + '/')
+	#Generate the pre.psipred.ss2 and check.checkpoint files
+	result = []
+	for root , dirs , files in os.walk('/'):
+		if 'make_fragments.pl' in files:
+			result.append(os.path.join(root))
+	make_fragments = (result[0] + '/')
+	os.system(make_fragments + 'make_fragments.pl structure.fasta')
+#	os.rename('' , 'pre.psipred.ss2')
+#	os.rename('' , 'check.checkpoint')
+	#Generate fragment files
+	for frag in [3 , 9]:
+		init('-in::file::fasta ' + filename[0] + '.fasta' + ' -in::file::s ' + sys.argv[1] + ' -frags::frag_sizes ' + str(frag) + ' -frags::ss_pred pre.psipred.ss2 predA -in::file::checkpoint check.checkpoint -frags::n_candidates 1000 -frags:write_ca_coordinates -frags::n_frags 200')
+		fregment = pyrosetta.rosetta.protocols.frag_picker.FragmentPicker()
+		fregment.parse_command_line()
+		fregment.read_vall(Vall + 'vall.jul19.2011.gz')
+		fregment.bounded_protocol()
+		fregment.save_fragments()
+	os.remove('check.checkpoint')
+
+
+
+
+
+
+
 
 
 
