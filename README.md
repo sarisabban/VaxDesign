@@ -3,11 +3,10 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
-2. Use the following command (in GNU/Linux) will install all necessary programs, python libraries, and databases required for this script to run successfully (approximately 3 hours to complete):
+2. You will also need to install [Rosetta](https://www.rosettacommons.org/) as the website describes.
+3. Use the following command (in GNU/Linux) to download the necessary database (NCBI's nr database - 30GB) in the correct directory for this script to run successfully (approximately 3 hours to complete):
 
 `python3 VaxDesign.py setup`
-
-3. The vall.jul19.2011.gz database is required to successfully run this script, but the database can only be found in the C++ [Rosetta](https://www.rosettacommons.org) software suite. Unfortunately it is currently not provided with PyRosetta therefore Rosetta needs to be downloaded separately, then uncompressed, to get the database. If you are only interested in getting the database, no need to compile Rosetta if you are not going to use it.
 
 ## How To Use:
 1. Use the following command to run the script:
