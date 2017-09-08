@@ -6,11 +6,10 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
-2. Use the following command (in GNU/Linux) will install all necessary programs, python libraries, and databases required for this script to run successfully (approximately 3 hours to complete):
+2. You will also need to install [Rosetta](https://www.rosettacommons.org/) as the website describes.
+3. Use the following command (in GNU/Linux) to download the necessary database (NCBI's nr database - 30GB) in the correct directory for this script to run successfully (approximately 3 hours to complete):
 
 `python3 VaxDesign.py setup`
-
-3. The vall.jul19.2011.gz database is required to successfully run this script, but the database can only be found in the C++ [Rosetta](https://www.rosettacommons.org) software suite. Unfortunately it is currently not provided with PyRosetta therefore Rosetta needs to be downloaded separately, then uncompressed, to get the database. If you are only interested in getting the database, no need to compile Rosetta if you are not going to use it.
 
 ## How To Use:
 1. Use the following command to run the script:
@@ -866,38 +865,13 @@ def Graft(receptor , motif , scaffold):
 
 #13 - Setup Sources For This Script
 def Setup():
-	''' Sets up and installs are the required programs, libraries, and databases to allow this script to function '''
-	os.system('sudo apt update')
-	os.system('sudo apt full-upgrade')
-	os.system('sudo apt install python3-pip && sudo python3 -m pip install biopython')
-	home = os.getcwd()
-	os.system('sudo apt install ncbi-blast+')
-	os.system('wget http://bioinfadmin.cs.ucl.ac.uk/downloads/psipred/psipred.4.01.tar.gz')
-	os.system('tar xzvf psipred.4.01.tar.gz')
-	os.system('rm psipred.4.01.tar.gz')
-	os.chdir('psipred/src')
-	os.system('make')
-	os.system('make install')
-	os.chdir(home)
-	os.chdir('psipred/BLAST+')
+	''' Downloads the NCBI's nr database '''
 	result = []
 	for root , dirs , files in os.walk('/'):
-		if 'blastp' in files:
+		if 'fragments.README' in files:
 			result.append(os.path.join(root))
-	directory = (result[0] + '/')
-	os.system("sed -i 's#/usr/local/bin#'" + directory + "# runpsipredplus")
-	os.system("sed -i 's#set execdir = ../bin#set execdir = " + home + "/psipred/bin#' runpsipredplus")
-	os.system("sed -i 's#set datadir = ../data#set datadir = " + home + "/psipred/data#' runpsipredplus")
-	os.chdir(home)
-	os.chdir('psipred')
-	os.system('wget http://bioinfadmin.cs.ucl.ac.uk/downloads/pfilt/pfilt1.5.tar.gz')
-	os.system('tar xzvf pfilt1.5.tar.gz')
-	os.system('rm pfilt1.5.tar.gz')
-	os.system('cc -O pfilt/pfilt.c -lm -o pfilt/pfilt')
-	os.system('wget ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref90.fasta.gz')
-	os.system('gunzip -v uniref90.fasta.gz')
-	os.system('pfilt/pfilt uniref90.fasta > uniref90filt')
-	os.system("makeblastdb -dbtype 'prot' -in uniref90filt -out uniref90filt")
+	direcotry = (result[0] + '/')
+	os.system('wget -O ' + direcotry + 'databases/nr.gz ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz')
 
 #14 - De Novo Design
 def DeNovo(number_of_output):
