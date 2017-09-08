@@ -53,7 +53,7 @@ Output files are as follows:
 |----|-------------------------|----------------------------------------------------------------------------------------------|
 | 1  | DeNovo.pdb              | Scaffold structure                                                                           |
 | 2  | motif.pdb	       | Original requested motif                                                                     |
-| 3  | receptor.pdb            | Original receptor that binds morif                                                           |
+| 3  | receptor.pdb            | Original receptor that binds motif                                                           |
 | 4  | grafted.pdb             | Grafted motif to De Novo structure                                                           |
 | 5  | structure.pdb           | Sequence designed structure                                                                  |
 | 6  | structure.fasta         | Fasta of Rosetta Designed structure                                                          |
@@ -868,7 +868,7 @@ def Setup():
 	''' Sets up and installs are the required programs, libraries, and databases to allow this script to function '''
 	os.system('sudo apt update')
 	os.system('sudo apt full-upgrade')
-	os.system('sudo apt install python3-pip && sudo python3 -m pip install biopython')
+	os.system('sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install zeep numpy biopython bs4')
 	result = []
 	for root , dirs , files in os.walk('/'):
 		if 'fragments.README' in files:
