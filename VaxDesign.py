@@ -690,42 +690,6 @@ class Fragment():
 		fregment.bounded_protocol()
 		fregment.save_fragments()
 	os.remove('check.checkpoint')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	#11.3 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
 	def Quality(pose):
 		''' Measures the quality of the 9-mer fragment files before an Abinitio folding simulation '''
