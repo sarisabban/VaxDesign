@@ -50,7 +50,7 @@ Output files are as follows:
 |----|-------------------------|----------------------------------------------------------------------------------------------|
 | 1  | DeNovo.pdb              | Scaffold structure                                                                           |
 | 2  | motif.pdb	       | Original requested motif                                                                     |
-| 3  | receptor.pdb            | Original receptor that binds morif                                                           |
+| 3  | receptor.pdb            | Original receptor that binds motif                                                           |
 | 4  | grafted.pdb             | Grafted motif to De Novo structure                                                           |
 | 5  | structure.pdb           | Sequence designed structure                                                                  |
 | 6  | structure.fasta         | Fasta of Rosetta Designed structure                                                          |
