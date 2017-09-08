@@ -657,12 +657,11 @@ class Fragment():
 		os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
 		os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
 	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
-	def MakeLocal(pose):
+	def MakeLocal(pose , filename):
 	''' Preforms fragment picking and secondary structure prediction locally '''
 	''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
 	#Generate the FASTA file
 	sequence = pose.sequence()
-	filename = 'structure.pdb'
 	fasta = open(filename[0] + '.fasta' , 'w')
 	fasta.write(sequence)
 	fasta.close()
@@ -959,7 +958,7 @@ Design.Pack(pose)
 Design.Motif(pose , Motif_from , Motif_to)
 print(RMSD(pose1 , pose2))
 Fragment.MakeServer(pose)
-Fragment.MakeLocal(pose)
+Fragment.MakeLocal(pose , 'structure.pdb')
 print(Fragment.Quality(pose))
 Fragment.RMSD(pose)
 print(Fragment.Average())
