@@ -897,10 +897,10 @@ class Setup():
 			if 'blastp' in files:
 				result.append(os.path.join(root))
 		directory = (result[0] + '/')
+		os.system("sed -i 's#set dbname = uniref90filt#set dbname = " + home + "/psipred/uniref90.fasta#' runpsipredplus")
 		os.system("sed -i 's#/usr/local/bin#'" + directory + "# runpsipredplus")
 		os.system("sed -i 's#set execdir = ../bin#set execdir = " + home + "/psipred/bin#' runpsipredplus")
 		os.system("sed -i 's#set datadir = ../data#set datadir = " + home + "/psipred/data#' runpsipredplus")
-		os.system("sed -i 's#set dbname = uniref90filt#" + home + "/psipred/uniref90.fasta#' runpsipredplus")
 		os.chdir(home)
 		os.chdir('psipred')
 		#Download and prepare the Uniref90 database
