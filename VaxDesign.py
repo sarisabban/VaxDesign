@@ -1015,7 +1015,8 @@ Remember: DeNovo() , Graft() , Design.Motif() do not export the pose, therefore 
 #The Protocol
 
 #0. Setup
-#Setup()
+#Setup.All()
+#Setup.Small()
 
 #1. Build Scaffold
 pose = pose_from_pdb('DeNovo.pdb')
