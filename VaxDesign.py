@@ -107,13 +107,6 @@ from pyrosetta.rosetta.core.scoring.packstat import *
 from pyrosetta.rosetta.core.pack.task.operation import *
 from pyrosetta.rosetta.core.pack.task import TaskFactory
 init()
-
-#User Inputs
-Protein		= sys.argv[1]
-RecChain	= sys.argv[2]
-Chain		= sys.argv[3]
-Motif_from	= sys.argv[4]
-Motif_to	= sys.argv[5]
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Functions
 
@@ -663,48 +656,48 @@ class Fragment():
 		os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
 		os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
 	#11.2 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File Locally
-	def MakeLocal(pose , filename):
-	''' Preforms fragment picking and secondary structure prediction locally '''
-	''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
-	#Find the Vall Database
-	result = []
-	for root , dirs , files in os.walk('/'):
-		if 'vall.jul19.2011.gz' in files:
-			result.append(os.path.join(root))
-	Vall = (result[0] + '/')
-	#Find the runpsipredplus Executable
-	result = []
-	for root , dirs , files in os.walk('/'):
-		if 'runpsipredplus' in files:
-			result.append(os.path.join(root))
-	psipredEX = (result[0] + '/')
-	#Find the uniref90 Database
-	result = []
-	for root , dirs , files in os.walk('/'):
-		if 'uniref90.fasta' in files:
-			result.append(os.path.join(root))
-	uniref90 = (result[0] + '/')
-	#Generate FASTA file
-	sequence = pose.sequence()
-	filename = sys.argv[1].split('.')
-	fasta = open(filename[0] + '.fasta' , 'w')
-	fasta.write(sequence)
-	fasta.close()
-	#Generate PSIPRED prediction file
-	os.system(psipredEX + 'runpsipredplus ' + filename[0] + '.fasta')
-	os.rename(filename[0] + '.ss2' , 'pre.psipred.ss2')
-	os.remove(filename[0] + '.horiz')
-	#Generate Checkpoint file
-	os.system('blastpgp -b 0 -j 3 -h 0.001 -d ' + uniref90 + 'uniref90.fasta -i ' + filename[0] + '.fasta -C check.checkpoint')
-	#Generate fragment files
-	for frag in [3 , 9]:
-		init('-in::file::fasta ' + filename[0] + '.fasta' + ' -in::file::s ' + sys.argv[1] + ' -frags::frag_sizes ' + str(frag) + ' -frags::ss_pred pre.psipred.ss2 predA -in::file::checkpoint check.checkpoint -frags::n_candidates 1000 -frags:write_ca_coordinates -frags::n_frags 200')
-		fregment = pyrosetta.rosetta.protocols.frag_picker.FragmentPicker()
-		fregment.parse_command_line()
-		fregment.read_vall(Vall + 'vall.jul19.2011.gz')
-		fregment.bounded_protocol()
-		fregment.save_fragments()
-	os.remove('check.checkpoint')
+	def MakeLocal(pose , thefile):
+		''' Preforms fragment picking and secondary structure prediction locally '''
+		''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
+		#Find the Vall Database
+		result = []
+		for root , dirs , files in os.walk('/'):
+			if 'vall.jul19.2011.gz' in files:
+				result.append(os.path.join(root))
+		Vall = (result[0] + '/')
+		#Find the runpsipredplus Executable
+		result = []
+		for root , dirs , files in os.walk('/'):
+			if 'runpsipredplus' in files:
+				result.append(os.path.join(root))
+		psipredEX = (result[0] + '/')
+		#Find the uniref90 Database
+		result = []
+		for root , dirs , files in os.walk('/'):
+			if 'uniref90.fasta' in files:
+				result.append(os.path.join(root))
+		uniref90 = (result[0] + '/')
+		#Generate FASTA file
+		sequence = pose.sequence()
+		filename = thefile.split('.')
+		fasta = open(filename[0] + '.fasta' , 'w')
+		fasta.write(sequence)
+		fasta.close()
+		#Generate PSIPRED prediction file
+		os.system(psipredEX + 'runpsipredplus ' + filename[0] + '.fasta')
+		os.rename(filename[0] + '.ss2' , 'pre.psipred.ss2')
+		os.remove(filename[0] + '.horiz')
+		#Generate Checkpoint file
+		os.system('blastpgp -b 0 -j 3 -h 0.001 -d ' + uniref90 + 'uniref90.fasta -i ' + filename[0] + '.fasta -C check.checkpoint')
+		#Generate fragment files
+		for frag in [3 , 9]:
+			init('-in::file::fasta ' + filename[0] + '.fasta' + ' -in::file::s ' + sys.argv[1] + ' -frags::frag_sizes ' + str(frag) + ' -frags::ss_pred pre.psipred.ss2 predA -in::file::checkpoint check.checkpoint -frags::n_candidates 1000 -frags:write_ca_coordinates -frags::n_frags 200')
+			fregment = pyrosetta.rosetta.protocols.frag_picker.FragmentPicker()
+			fregment.parse_command_line()
+			fregment.read_vall(Vall + 'vall.jul19.2011.gz')
+			fregment.bounded_protocol()
+			fregment.save_fragments()
+		os.remove('check.checkpoint')
 	#11.3 - Measure The Number of 9-mer Fragments That Are Below 1Å RMSD
 	def Quality(pose):
 		''' Measures the quality of the 9-mer fragment files before an Abinitio folding simulation '''
@@ -1015,51 +1008,59 @@ Remember: DeNovo() , Graft() , Design.Motif() do not export the pose, therefore 
 #The Protocol
 
 #0. Setup
-#Setup.All()
-#Setup.Small()
+if sys.argv[1] == 'Setup' or sys.argv[1] == 'setup' and sys.argv[2] == 'all' or sys.argv[2] == 'All':
+	Setup.All()
+elif sys.argv[1] == 'Setup' or sys.argv[1] == 'setup' and sys.argv[2] == 'Small' or sys.argv[2] == 'small':
+	Setup.Small()
+else:
+	#User Inputs
+	Protein		= sys.argv[1]
+	RecChain	= sys.argv[2]
+	Chain		= sys.argv[3]
+	Motif_from	= sys.argv[4]
+	Motif_to	= sys.argv[5]
+	#1. Build Scaffold
+	pose = pose_from_pdb('DeNovo.pdb')
+	'''
+	while True:
+		DeNovo(100)						#Build scaffold topology by De Novo Design
+		pose = pose_from_pdb('DeNovo.pdb')			#Identify pose
+		Design.Pack(pose)					#Sequence design of topology
+		Fragment.MakeLocal(pose)				#Generate fragments in preparation for Abinitio fold simulation
+		Fragment.RMSD(pose)					#Plot fragment quality (all positions' RMSD should be < 1Å)
+		#Repeat if fragment quality is bad (average RMSD > 2Å)
+		if Fragment.Average() <= 2:
+			break
+		else:
+			continue
+	'''
+	#2. Isolate Motif
+	Motif(Protein , Chain , Motif_from , Motif_to)
 
-#1. Build Scaffold
-pose = pose_from_pdb('DeNovo.pdb')
-'''
-while True:
-	DeNovo(100)						#Build scaffold topology by De Novo Design
-	pose = pose_from_pdb('DeNovo.pdb')			#Identify pose
-	Design.Pack(pose)					#Sequence design of topology
-	Fragment.MakeLocal(pose)				#Generate fragments in preparation for Abinitio fold simulation
-	Fragment.RMSD(pose)					#Plot fragment quality (all positions' RMSD should be < 1Å)
-	#Repeat if fragment quality is bad (average RMSD > 2Å)
-	if Fragment.Average() <= 2:
-		break
-	else:
-		continue
-'''
-#2. Isolate Motif
-Motif(Protein , Chain , Motif_from , Motif_to)
+	#3. Isolate Receptor
+	Receptor(Protein , RecChain)
 
-#3. Isolate Receptor
-Receptor(Protein , RecChain)
+	#4. Graft Motif onto Scaffold
+	MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
 
-#4. Graft Motif onto Scaffold
-MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
+	#5. Sequence Design The Structure Around The Motif
+	home = os.getcwd()
+	for attempt in range(1):
+		time.sleep(1)
+		os.chdir(home)
+		pose = pose_from_pdb('grafted.pdb')
+		os.mkdir('Attempt_' + str(attempt + 1))
+		os.chdir(home + '/Attempt_' + str(attempt + 1))
+		Design.Motif(pose , MotifPosition[0] , MotifPosition[1])
+		pose = pose_from_pdb('structure.pdb')
 
-#5. Sequence Design The Structure Around The Motif
-home = os.getcwd()
-for attempt in range(1):
-	time.sleep(1)
-	os.chdir(home)
-	pose = pose_from_pdb('grafted.pdb')
-	os.mkdir('Attempt_' + str(attempt + 1))
-	os.chdir(home + '/Attempt_' + str(attempt + 1))
-	Design.Motif(pose , MotifPosition[0] , MotifPosition[1])
-	pose = pose_from_pdb('structure.pdb')
+		#6. Generate Fragments Locally To Test Fragment Quality And Predict Abinitio Fold Simulation Success
+		Fragment.MakeServer(pose)
+		Fragment.RMSD(pose)
+		print(Fragment.Average())
 
-	#6. Generate Fragments Locally To Test Fragment Quality And Predict Abinitio Fold Simulation Success
-	Fragment.MakeServer(pose)
-	Fragment.RMSD(pose)
-	print(Fragment.Average())
-
-	#7. Average Fragment RMSD Should Be < 2Å - If Not Then Repeat
-	if Fragment.Average() <= 2:
-		break
-	else:
-		continue
+		#7. Average Fragment RMSD Should Be < 2Å - If Not Then Repeat
+		if Fragment.Average() <= 2:
+			break
+		else:
+			continue
