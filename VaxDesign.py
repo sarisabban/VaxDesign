@@ -689,8 +689,7 @@ class Fragment():
 	os.rename(filename[0] + '.ss2' , 'pre.psipred.ss2')
 	os.remove(filename[0] + '.horiz')
 	#Generate Checkpoint file
-	os.system('psiblast -db ' + uniref90 + 'uniref90.fasta -query ' + filename[0] + '.fasta')
-	os.rename(filename[0] + '.checkpoint' , 'check.checkpoint')
+	os.system('blastpgp -b 0 -j 3 -h 0.001 -d ' + uniref90 + 'uniref90.fasta -i ' + filename[0] + '.fasta -C check.checkpoint')
 	#Generate fragment files
 	for frag in [3 , 9]:
 		init('-in::file::fasta ' + filename[0] + '.fasta' + ' -in::file::s ' + sys.argv[1] + ' -frags::frag_sizes ' + str(frag) + ' -frags::ss_pred pre.psipred.ss2 predA -in::file::checkpoint check.checkpoint -frags::n_candidates 1000 -frags:write_ca_coordinates -frags::n_frags 200')
@@ -1040,7 +1039,9 @@ for attempt in range(1):
 	pose = pose_from_pdb('structure.pdb')
 
 	#6. Generate Fragments Locally To Test Fragment Quality And Predict Abinitio Fold Simulation Success
-
+	Fragment.MakeServer(pose)
+	Fragment.RMSD(pose)
+	print(Fragment.Average())
 
 	#7. Average Fragment RMSD Should Be < 2Å - If Not Then Repeat
 	if Fragment.Average() <= 2:
