@@ -1021,7 +1021,6 @@ else:
 	Motif_from	= sys.argv[4]
 	Motif_to	= sys.argv[5]
 	#1. Build Scaffold
-	pose = pose_from_pdb('DeNovo.pdb')
 	'''
 	while True:
 		DeNovo(100)						#Build scaffold topology by De Novo Design
@@ -1035,6 +1034,8 @@ else:
 		else:
 			continue
 	'''
+	pose = pose_from_pdb('DeNovo.pdb')
+
 	#2. Isolate Motif
 	Motif(Protein , Chain , Motif_from , Motif_to)
 
