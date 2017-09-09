@@ -686,6 +686,7 @@ class Fragment():
 		#Generate PSIPRED prediction file
 		os.system(psipredEX + 'runpsipredplus ' + filename[0] + '.fasta')
 		os.rename(filename[0] + '.ss2' , 'pre.psipred.ss2')
+		os.remove(filename[0] + '.ss')
 		os.remove(filename[0] + '.horiz')
 		#Generate Checkpoint file
 		os.system('blastpgp -b 0 -j 3 -h 0.001 -d ' + uniref90 + 'uniref90.fasta -i ' + filename[0] + '.fasta -C check.checkpoint')
