@@ -4,9 +4,15 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
 2. You will also need to install [Rosetta](https://www.rosettacommons.org/) as the website describes.
-3. Use the following command (in GNU/Linux) will install all necessary programs, python libraries, and databases required for this script to run successfully (approximately 3 hours to complete):
+3. Use the following command (in GNU/Linux) will install all necessary programs, python libraries, and databases required for this script to run successfully:
 
-`python3 VaxDesign.py setup`
+To setup everything and allows calculating fragments locally (approximately 3 hours to complete).
+
+`python3 VaxDesign.py setup all`
+
+To setup everything but generates fragments at the Robetta Server (approximately 5 minutes to complete).
+
+`python3 VaxDesign.py setup small`
 
 ## How To Use:
 1. Use the following command to run the script:
