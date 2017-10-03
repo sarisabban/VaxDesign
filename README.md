@@ -3,16 +3,9 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
-2. You will also need to install [Rosetta](https://www.rosettacommons.org/) as the website describes.
-3. Use the following command (in GNU/Linux) will install all necessary programs, python libraries, and databases required for this script to run successfully:
+2. Use the following commands (in GNU/Linux) to install all nessesary programs and Python libraries for this script to run successfully:
 
-To setup everything and allows calculating fragments locally (approximately 3 hours to complete).
-
-`python3 VaxDesign.py setup all`
-
-To setup everything but generates fragments at the Robetta Server (approximately 5 minutes to complete).
-
-`python3 VaxDesign.py setup small`
+`sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install numpy biopython bs4`
 
 ## How To Use:
 1. Use the following command to run the script:
@@ -29,28 +22,27 @@ Example:
 
 `python3 VaxDesign.py 2y7q A B 420 429`
 
-2. Calculation time is about 720 hours on a normal desktop computer.
-3. Access to the internet is a requirement since the script will be sending and retrieving data from some servers (especially during setup).
+2. Calculation time is about 12 hours on a normal desktop computer for each structure.
+3. Access to the internet is a requirement since the script will be sending and retrieving data from some servers.
 4. Use [this Rosetta Abinitio script](https://github.com/sarisabban/RosettaAbinitio) to simulate the folding of the final designed vaccine's protein structure. An HPC (High Preformance Computer) and the original C++ [Rosetta](https://www.rosettacommons.org/) are required for this step.
 
 ## Description
 This script autonomously designs a vaccine from a user specified target site. This is not artificial intellegance, you cannot just ask the the script to design "A" vaccine, you must understand what target site you want to develop antibodies against (make a liturature search and understand your disease and target site), then supply this target site to the script to build a protein structure around it so the final protein can be used as a vaccine. You must have prior understanding of Bioinformatics and Immunology in order to be able to understand what site to target and to supply it to the script. Once you identify a target site, the script will take it and run a long protocol, without the need for you to intervene, that will result in an ideal protein structure displaying your target site in its original 3D cofiguration. Thus the protien, theoretically, can be used as a vaccine against this site, and hopefully neutralise the disease you are researching. Everytime you run this script a different final protien structure will be generated, this is important to keep in mind, because if you want to generate many different structures to test or to use as boosts you can simply run the same target site again and you will end up with a different final structure.
 
-This script has been last tested to work well with PyRosetta 4 Release 147 and using Python 3.5. If you use this script on a newer PyRosetta or Python version and it fails please notify the author to get it updated.
+This script has been last tested to work well with PyRosetta 4 Release 147 and using Python 3.5. If you use this script on a newer PyRosetta or Python version and it fails please notify me to get it updated.
 
 Here is a [video](youtube.com/) that explains how to select a target site, how the script functions, and what results you sould get. If I did not make a video yet, bug me until I make one.
 
 The script protocol is as follows:
 1. Build Scaffold. --> STILL UNDER DEVELOPMENT --> I am having lots of trouble with De Novo Design (I have a very long temporary work around)
-2. Isolate Motif.
-3. Isolate Receptor.
-4. Graft Motif onto Scaffold.
-5. Sequence Design The Structure Around The Motif.
-6. Generate Fragments for Rosetta Abinitio Folding Simulation.
-7. If Average Fragment RMSD is Higher Than 2Å Repeat Steps 5 and 6.
+2. Isolate motif.
+3. Isolate receptor.
+4. Graft motif onto scaffold.
+5. Sequence design the structure around the motif.
+6. Generate fragments for Rosetta Abinitio folding simulation.
+7. If average fragment RMSD is higher than 2Å repeat steps 5 and 6.
 
 Output files are as follows:
-
 
 |    | File Name               | Description                                                                                  |
 |----|-------------------------|----------------------------------------------------------------------------------------------|
