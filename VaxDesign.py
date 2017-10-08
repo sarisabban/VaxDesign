@@ -8,7 +8,7 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
 2. Use the following commands (in GNU/Linux) to install all nessesary programs and Python libraries for this script to run successfully:
 
-`sudo apt install python3-pip pymol DSSP gnuplot && sudo python3 -m pip install numpy biopython bs4`
+`sudo apt install python3-pip pymol DSSP gnuplot -y && sudo pip3 install numpy biopython bs4`
 
 ## How To Use:
 1. Use the following command to run the script:
@@ -157,8 +157,8 @@ def SASA(pose):
 	#Temporary generate a .pdb file of the pose to isolate the layers since it is not yet possible to do that using a Rosetta pose, this temporary .pdb file will be deleted after the layers are found
 	pose.dump_pdb('ToDesign.pdb')
 	#Standard script to setup biopython's DSSP to calculate SASA using Wilke constants
-	p = Bio.PDB.PDBParser()
-	structure = p.get_structure('X' , 'ToDesign.pdb')
+	parser = Bio.PDB.PDBParser()
+	structure = parser.get_structure('X' , 'ToDesign.pdb')
 	model = structure[0]
 	dssp = Bio.PDB.DSSP(model , 'ToDesign.pdb' , acc_array='Wilke')
 	#Loop to get SASA for each amino acid
@@ -393,7 +393,7 @@ class Fragment():
 			status = jobdata.find('td', string='Status: ').find_next().text
 			if status == 'Complete':
 				print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
-				break		
+				break
 			else:
 				print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
 				time.sleep(1800)
@@ -486,7 +486,60 @@ class Fragment():
 		Average_RMSD = value / count
 		return(Average_RMSD)
 
-#8 - De Novo Design
+#8 - Crystallisability
+def Crystal(Protein):
+	''' Submits the structur's FASTA sequence to the XtalPred server (http://ffas.burnham.org/XtalPred-cgi/xtal.pl) to calculate the probability of crystillisation '''
+	''' Returns values between 1 and 5, 1 = Most Promissing 5 = Least Promissing '''
+	Description = '>TEST2'
+	parser = Bio.PDB.PDBParser()
+	structure = parser.get_structure('X' , Protein)
+	ppb = Bio.PDB.PPBuilder()
+	aminos = list()
+	for aa in ppb.build_peptides(structure):
+		aminos.append(aa.get_sequence())
+	Sequence = aminos[0]
+	#1 - Post
+	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
+	payload = {
+		'query':Description + '\n' + Sequence,
+		'mail':'',
+		'agree':'on',
+		'LabDir':'',
+		'Submit':'Submit',
+		'.cgifields':'CGM',
+		'.cgifields':'SERP',
+		'.cgifields':'agree',
+	}
+	session = requests.session()
+	response = session.post('http://ffas.burnham.org/XtalPred-cgi/xtal.pl', data=payload , files=dict(foo='bar'))
+	for line in response:
+		line = line.decode()
+		if re.search('Job id: ' , line):
+			job =  re.findall('<b>Job id: (.*?)</b>' , line)
+	JobURL = 'http://ffas.burnham.org/XtalPred-cgi/result.pl?dir=' + job[0] + '/0'
+	print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'))
+	print('Submitted to XtalPred. Results URL:' , JobURL)
+	#2 - Check
+	Job = urllib.request.urlopen(JobURL)
+	jobdata = bs4.BeautifulSoup(Job , 'lxml')
+	status = jobdata.find(string='Results of this job do not exist!')
+	while True:
+		time.sleep(60)
+		if status == 'Results of this job do not exist!':
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status: Still Calculating')
+			continue
+		else:
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status: Done')
+			break
+	#3 - Get Result
+	Job = urllib.request.urlopen('http://ffas.burnham.org/XtalPred-cgi/download.pl?dir=' + job[0] + '/0&type=summary')
+	jobdata = bs4.BeautifulSoup(Job , 'lxml')
+	for line in jobdata:
+		line = line.decode()
+		value = re.findall('Crystallization class:	([0-9])', line)[0]
+		return(value)
+
+#9 - De Novo Design
 def DeNovo(number_of_output):
 	''' Preforms De Novo Design on a protein's structure using the BluePrintBDR Mover. Generates only structures with helices (no sheet) '''
 	''' Generates user defined number of DeNovo_#.pdb files each with a different structure '''
@@ -558,6 +611,7 @@ Design.Motif(pose , Motif_from , Motif_to)
 Fragment.Make(pose)
 Fragment.RMSD(pose)
 print(Fragment.Average())
+print(Crystal('structure.pdb'))
 DeNovo(1000)
 Remember: DeNovo() , Graft() , Design.Motif() do not export the pose, therefore you must call the pose from the exported .pdb file after each function so the pose can be used by the subsequent function.
 '''
@@ -598,9 +652,9 @@ for attempt in range(1):
 	os.mkdir('Attempt_' + str(attempt + 1))
 	os.chdir(home + '/Attempt_' + str(attempt + 1))
 	Design.Motif(pose , MotifPosition[0] , MotifPosition[1])
-	pose = pose_from_pdb('structure.pdb')
 
 	#6. Generate Fragments Locally To Test Fragment Quality And Predict Abinitio Fold Simulation Success
+	pose = pose_from_pdb('structure.pdb')
 	Fragment.Make(pose)
 	Fragment.RMSD(pose)
 	print(Fragment.Average())
@@ -610,3 +664,5 @@ for attempt in range(1):
 		break
 	else:
 		continue
+#6. Calculate Crystallisability Prediction
+print(Crystal('structure.pdb'))
