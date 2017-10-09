@@ -63,12 +63,6 @@ Output files are as follows:
 | 12 | FragmentAverageRMSD.dat | Average RMSD of the fragments                                                                |
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
-#Import Modules							   #Modules to download--->   #      #
-import sys , os , re , time , datetime , subprocess , random , requests , urllib.request , Bio.PDB, bs4
-from pyrosetta import *
-from pyrosetta.toolbox import *
-init()
-
 #Terminal Text Colours
 Black 	= '\x1b[30m'
 Red	= '\x1b[31m'
@@ -85,7 +79,12 @@ print(Green + '\n  ██╗   ██╗ █████╗ ██╗  ██╗
 print(Purple + '  ╔═╗┬ ┬┌┬┐┌─┐  ╔╦╗┌─┐┌─┐┬┌─┐┌┐┌  ╔═╗  ╦  ╦┌─┐┌─┐┌─┐┬┌┐┌┌─┐\n  ╠═╣│ │ │ │ │   ║║├┤ └─┐││ ┬│││  ╠═╣  ╚╗╔╝├─┤│  │  ││││├┤ \n  ╩ ╩└─┘ ┴ └─┘  ═╩╝└─┘└─┘┴└─┘┘└┘  ╩ ╩   ╚╝ ┴ ┴└─┘└─┘┴┘└┘└─┘' + Cancel)
 print(Yellow + 'Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)' + Cancel)
 print(Cyan + '--------------------------------------------------------------' + Cancel)
-time.sleep(3)
+
+#Import Modules							   #Modules to download--->   #      #
+import sys , os , re , time , datetime , subprocess , random , requests , urllib.request , Bio.PDB, bs4
+from pyrosetta import *
+from pyrosetta.toolbox import *
+init()
 
 #User Inputs
 Protein		= sys.argv[1]
@@ -589,7 +588,7 @@ MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
 
 #5. Sequence Design The Structure Around The Motif
 home = os.getcwd()
-for attempt in range(1):
+for attempt in range(10):
 	time.sleep(1)
 	os.chdir(home)
 	pose = pose_from_pdb('grafted.pdb')
