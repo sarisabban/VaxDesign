@@ -356,7 +356,7 @@ class Design():
 #7 - Fragment Generation and Identification
 class Fragment():
 	#7.1 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File At Robetta Server
-	def MakeServer(pose):
+	def Make(pose):
 		''' Submits the pose to the Robetta Server (http://www.robetta.org) for fragment generation that are used for the Abinitio folding simulation '''
 		''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
 		sequence = pose.sequence()
