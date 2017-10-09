@@ -289,6 +289,68 @@ def Graft(receptor , motif , scaffold):
 
 #6 - RosettaDesign
 class Design():
+	#6.1 - Design The Structure One Layer At A Time Moving Towards A Tightly Packed Core With Every Loop
+	def Pack(pose):
+		''' Applies FastDesign to change the whole structure's amino acids (one layer at a time as well as designing towards an optimally packed core) while maintaining the same backbone. Should be faster than the Whole method and results in a better final structure than the Layer method '''
+		''' Generates the Designed.pdb file '''
+		#A - Relax original structure
+		scorefxn = get_fa_scorefxn()												#Call the score function
+		score1_original_before_relax = scorefxn(pose)										#Measure score before relaxing
+		Relax(pose)														#Relax structure
+		score2_original_after_relax = scorefxn(pose)										#Measure score after relaxing
+		#B - FastDesign Protocol												#Uses Generic Monte Carlo with PackStat as a filter to direct FastDesign towards an optimally packed structure core
+		chain = pose.pdb_info().chain(1)											#Identify chain
+		layers = [2 , 1 , 0]													#Layer Identity from SASA Surface = [0] , Boundary = [1] , Core = [2]
+		for identity in layers:													#Loop through each layer
+			#1 - Setup The PackStat Filter
+			filters = rosetta.protocols.simple_filters.PackStatFilter()
+			#2 - Identify The Layers
+			sasa = SASA(pose)												#Re-calculate SASA every time because amino acid position can change from one layer to another during the design phase, therefore make sure to design the layer not the amino acid
+			layer = sasa[identity]												#Changes every iteration to start with Core (sasa[2]) then Boundary (sasa[1]) then Surface (sasa[0])
+			#3 - Generate The Resfile											#Will generate a new Resfile for each layer (which is why it is deleted at the end of the loop)
+			Resfile = open('Resfile.resfile' , 'w')
+			Resfile.write('NATAA\n')
+			Resfile.write('start\n')
+			for line in layer:
+				Resfile.write(str(line) + ' ' + chain + ' ALLAA\n')
+			Resfile.close()
+			#4 - Setup The FastDesign Mover
+			task = pyrosetta.rosetta.core.pack.task.TaskFactory()								#Setup the TaskFactory
+			read = pyrosetta.rosetta.core.pack.task.operation.ReadResfile('Resfile.resfile')				#Call the generated Resfile
+			task.push_back(read)												#Add the Resfile to the TaskFactory
+			movemap = MoveMap()												#Setup the MoveMap
+			movemap.set_bb(False)												#Do not change the phi and psi BackBone angles
+			movemap.set_chi(True)												#Change the chi Side Chain angle
+			mover = pyrosetta.rosetta.protocols.denovo_design.movers.FastDesign()						#Call the FastDesign Mover
+			mover.set_task_factory(task)											#Add the TaskFactory to it
+			mover.set_movemap(movemap)											#Add the MoveMap to it
+			mover.set_scorefxn(scorefxn)											#Add the Score Function to it
+			#5 - Setup and Apply The Generic Monte Carlo Mover
+			MC = pyrosetta.rosetta.protocols.simple_moves.GenericMonteCarloMover()						#Call Monter Carlo Class
+			MC.set_mover(mover)												#Load The Mover
+			MC.set_scorefxn(scorefxn)											#Set score function
+			MC.set_maxtrials(10)												#Set number of monte carlo loops
+			MC.set_temperature(1)												#Set temperature
+			MC.set_preapply(True)												#To apply Boltzmann accept/reject to all applications of the mover (always use False)
+			MC.set_drift(True)												#Make current pose = next iteration pose
+			MC.set_sampletype('high')											#Move monte carlo to higher filter score
+			MC.recover_low(True)												#True - at the end of application, the pose is set to the lowest (or highest if sample_type="high") scoring pose
+			#MC.stopping_condition()											#Stops before trials are done if a filter evaluates to true
+			MC.add_filter(filters , False , 1.0 , 'high' , True)								#Add a filter (Filter Type , Adaptive , Temperature , Sample Type , Rank By)
+			#MC.task_factory(task) #Causes an infinite loop									#Include a Task Factory
+			#MC.boltzmann(pose) #For some reason hates a relaxed pose							#Evaulates a pose based on the scores/filters + temperatures
+			MC.apply(pose)													#Apply Move
+			os.remove('Resfile.resfile')											#To keep working directory clean, and to make sure each Resfile has the info for each layer only and they do not get mixed and appended together in one Resfile
+		#C - Relax Pose
+		Relax(pose)														#Relax structure
+		#D - Output Result
+		score3_of_design_after_relax = scorefxn(pose)										#Measure score of designed pose
+		pose.dump_pdb('structure.pdb')												#Export final pose into a .pdb structure file
+		print('---------------------------------------------------------')
+		print('Original Structure Score:' , '\t' , score1_original_before_relax)
+		print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
+		print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
+	#6.2 - Design The Structure One Layer At A Time, Except For A Desired Motif, Moving Towards A Tightly Packed Core With Every Loop
 	def Motif(pose , Motif_From , Motif_To):
 		''' Applies RosettaDesign to change the structure's amino acids (one layer at a time - like in the Design_Layer method) except for a desired continuous motif sequence while maintaining the same backbone '''
 		''' Just updates the pose with the new structure '''
@@ -552,6 +614,7 @@ Relax(pose)
 SASA(pose)
 MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
 Design.Motif(pose , Motif_from , Motif_to)
+Fragment.Pack(pose)
 Fragment.Make(pose)
 Fragment.RMSD(pose)
 print(Fragment.Average())
