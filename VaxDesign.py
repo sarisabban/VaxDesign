@@ -416,228 +416,149 @@ class Design():
 		print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
 
 #7 - Fragment Generation and Identification
-class Fragment():
-	#7.1 - Make The 3-mer and 9-mer Fragment Files and The PSIPRED File At Robetta Server
-	def Make(pose):
-		''' Submits the pose to the Robetta Server (http://www.robetta.org) for fragment generation that are used for the Abinitio folding simulation '''
-		''' Generates the 3-mer file, the 9-mer file, and the PsiPred file '''
-		sequence = pose.sequence()
-		#1 - Post
-		web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
-		payload = {
-			'UserName':'ac.research',
-			'Email':'',
-			'Notes':'structure',
-			'Sequence':sequence,
-			'Fasta':'',
-			'Code':'',
-			'ChemicalShifts':'',
-			'NoeConstraints':'',
-			'DipolarConstraints':'',
-			'type':'submit'
-		}
-		session = requests.session()
-		response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload , files=dict(foo='bar'))		
-		for line in response:
-			line = line.decode()
-			if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line):
-				JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line)
-		JobURL = 'http://www.robetta.org/' + JobID[0]
-		#2 - Check
-		ID = JobID[0].split('=')
-		print('Job ID: ' + str(ID[1]))
-		while True:
-			Job = urllib.request.urlopen(JobURL)
-			jobdata = bs4.BeautifulSoup(Job , 'lxml')
-			status = jobdata.find('td', string='Status: ').find_next().text
-			if status == 'Complete':
-				print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
-				break
-			else:
-				print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
-				time.sleep(1800)
-				continue
-		#3 - Download
-		sequence = pose.sequence()
-		fasta = open('structure.fasta' , 'w')
-		fasta.write(sequence)
-		fasta.close()
-		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
-		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
-		os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
-		os.rename('aat000_03_05.200_v1_3' , 'frags.200.3mers')
-		os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
-		os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
-	#7.2 - Calculate The Best Fragment's RMSD At Each Position And Plot The Result
-	def RMSD(pose):
-		''' Measures the RMSD for each fragment at each position and plots the lowest RMSD fragment for each positon '''
-		''' Generates an RMSD vs Position PDF plot '''
-		frag = open('frags.200.9mers' , 'r')
-		rmsd = open('temp.dat' , 'w')
-		for line in frag:
-			if line.lstrip().startswith('position:'):
-				line = line.split()
-				size = line[1]
-		frag.close()
-		count = 0
-		for x in range (int(size)):
-			count +=1
-			#Get the pose and make a copy of it to apply changes to
-			pose_copy = Pose()
-			pose_copy.assign(pose)
-			#Setup frame list
-			frames = pyrosetta.rosetta.core.fragment.FrameList()
-			#Setup the 9-mer fragment (9-mer is better than 3-mer for this analysis)
-			fragset = pyrosetta.rosetta.core.fragment.ConstantLengthFragSet(9)
-			fragset.read_fragment_file('frags.200.9mers')
-			fragset.frames(count , frames)
-			#Setup the MoveMap
-			movemap = MoveMap()
-			movemap.set_bb(True)
-			#Setup and apply the fragment inserting mover
-			for frame in frames:
-				for frag_num in range( 1 , frame.nr_frags() + 1 ):
-					frame.apply(movemap , frag_num , pose_copy)
-					#Measure the RMSD difference between the original pose and the new changed pose (the copy)
-					RMSD = rosetta.core.scoring.CA_rmsd(pose , pose_copy)
-					print(RMSD , '\t' , count)
-					rmsd.write(str(RMSD) + '\t' + str(count) + '\n')
-					#Reset the copy pose to original pose
-					pose_copy.assign(pose)
-		rmsd.close()
-		#Analyse the RMSD file to get the lowest RMSD for each position
-		data = open('RMSDvsPosition.dat' , 'w')
-		lowest = {} 									#Mapping group number -> lowest value found
-		for line in open('temp.dat'):
-			parts = line.split()
-			if len(parts) != 2:							#Only lines with two items on it
-				continue
-			first = float(parts[0])
-			second = int(parts[1])
-			if first == 0: 								#Skip line with 0.0 RMSD (this is an error from the 9-mer fragment file). I don't know why it happens
-				continue
-			if second not in lowest:
-				lowest[second] = first
-			else:
-				if first < lowest[second]:
-					lowest[second] = first
-		for position, rmsd in lowest.items():
-			#print(str(rmsd) + '\t' + str(position))
-			data.write(str(position) + '\t' + str(rmsd) + '\n')
-		data.close()
-		gnuplot = open('gnuplot_sets' , 'w')
-		gnuplot.write("set terminal postscript\nset output './plot_frag.pdf'\nset encoding iso_8859_1\nset term post eps enh color\nset xlabel 'Position'\nset ylabel 'RMSD (\\305)'\nset yrange [0:]\nset xrange [0:]\nset xtics 1\nset xtics rotate\nset title 'Fragment Quality'\nset key off\nset boxwidth 0.5\nset style fill solid\nplot 'RMSDvsPosition.dat' with boxes\nexit")
-		gnuplot.close()
-		os.system('gnuplot < gnuplot_sets')
-		os.remove('gnuplot_sets')
-		os.remove('temp.dat')
-	#7.3 - Calculates The Average RMSD of The Fragments
-	def Average():
-		''' Uses the RMSDvsPosition.dat to average out the fragment RMSD over the entire protein structure. Can only be used after the Fragment.RMSD() function '''
-		''' Prints out the average RMSD '''
-		data = open('RMSDvsPosition.dat' , 'r')
-		value = 0
-		for line in data:
+def Fragments(pose):
+	''' Submits the pose to the Robetta server (http://www.robetta.org) for fragment generation that are used for the Abinitio folding simulation. Then measures the RMSD for each fragment at each position and chooses the lowest RMSD. Then averages out the lowest RMSDs. Then plots the lowest RMSD fragment for each positon '''
+	''' Generates the 3-mer file, the 9-mer file, the PsiPred file, the RMSD vs Position PDF plot with the averaged fragment RMSD printed in the plot '''
+	#Make the 3-mer and 9-mer fragment files and the PSIPRED file using the Robetta server
+	sequence = pose.sequence()
+	#Post
+	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
+	payload = {
+		'UserName':'ac.research',
+		'Email':'',
+		'Notes':'structure',
+		'Sequence':sequence,
+		'Fasta':'',
+		'Code':'',
+		'ChemicalShifts':'',
+		'NoeConstraints':'',
+		'DipolarConstraints':'',
+		'type':'submit'
+	}
+	session = requests.session()
+	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload , files=dict(foo='bar'))		
+	for line in response:
+		line = line.decode()
+		if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line):
+			JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line)
+	JobURL = 'http://www.robetta.org/' + JobID[0]
+	#Check
+	ID = JobID[0].split('=')
+	print('Job ID: ' + str(ID[1]))
+	while True:
+		Job = urllib.request.urlopen(JobURL)
+		jobdata = bs4.BeautifulSoup(Job , 'lxml')
+		status = jobdata.find('td', string='Status: ').find_next().text
+		if status == 'Complete':
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
+			break
+		else:
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
+			time.sleep(1800)
+			continue
+	#Download
+	sequence = pose.sequence()
+	fasta = open('structure.fasta' , 'w')
+	fasta.write(sequence)
+	fasta.close()
+	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
+	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
+	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
+	os.rename('aat000_03_05.200_v1_3' , 'frags.200.3mers')
+	os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
+	os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
+	#Calculate the best fragment's RMSD at each position
+	frag = open('frags.200.9mers' , 'r')
+	rmsd = open('temp.dat' , 'w')
+	for line in frag:
+		if line.lstrip().startswith('position:'):
 			line = line.split()
-			RMSD = float(line[1])
-			value = value + RMSD
-			count = int(line[0])
-		Average_RMSD = value / count
-		return(Average_RMSD)
+			size = line[1]
+	frag.close()
+	count = 0
+	for x in range (int(size)):
+		count +=1
+		#Get the pose and make a copy of it to apply changes to
+		pose_copy = Pose()
+		pose_copy.assign(pose)
+		#Setup frame list
+		frames = pyrosetta.rosetta.core.fragment.FrameList()
+		#Setup the 9-mer fragment (9-mer is better than 3-mer for this analysis)
+		fragset = pyrosetta.rosetta.core.fragment.ConstantLengthFragSet(9)
+		fragset.read_fragment_file('frags.200.9mers')
+		fragset.frames(count , frames)
+		#Setup the MoveMap
+		movemap = MoveMap()
+		movemap.set_bb(True)
+		#Setup and apply the fragment inserting mover
+		for frame in frames:
+			for frag_num in range( 1 , frame.nr_frags() + 1 ):
+				frame.apply(movemap , frag_num , pose_copy)
+				#Measure the RMSD difference between the original pose and the new changed pose (the copy)
+				RMSD = rosetta.core.scoring.CA_rmsd(pose , pose_copy)
+				print(RMSD , '\t' , count)
+				rmsd.write(str(RMSD) + '\t' + str(count) + '\n')
+				#Reset the copy pose to original pose
+				pose_copy.assign(pose)
+	rmsd.close()
+	#Analyse the RMSD file to get the lowest RMSD for each position
+	data = open('RMSDvsPosition.dat' , 'w')
+	lowest = {} 									#Mapping group number -> lowest value found
+	for line in open('temp.dat'):
+		parts = line.split()
+		if len(parts) != 2:							#Only lines with two items on it
+			continue
+		first = float(parts[0])
+		second = int(parts[1])
+		if first == 0: 								#Skip line with 0.0 RMSD (this is an error from the 9-mer fragment file). I don't know why it happens
+			continue
+		if second not in lowest:
+			lowest[second] = first
+		else:
+			if first < lowest[second]:
+				lowest[second] = first
+	for position, rmsd in lowest.items():
+		#print(str(rmsd) + '\t' + str(position))
+		data.write(str(position) + '\t' + str(rmsd) + '\n')
+	data.close()
+	#Calculate the average RMSD of the fragments
+	data = open('RMSDvsPosition.dat' , 'r')
+	value = 0
+	for line in data:
+		line = line.split()
+		RMSD = float(line[1])
+		value = value + RMSD
+		count = int(line[0])
+	Average_RMSD = round(value / count , 2)
+	#Plot the results
+	gnuplot = open('gnuplot_sets' , 'w')
+	gnuplot.write("reset\nset terminal postscript\nset output './plot_frag.pdf'\nset encoding iso_8859_1\nset term post eps enh color\nset xlabel 'Position'\nset ylabel 'RMSD (\\305)'\nset yrange [0:]\nset xrange [0:]\nset xtics auto\nset xtics rotate\nset grid front\nunset grid\nset title 'Fragment Quality'\nset key off\nset boxwidth 0.5\nset style fill solid\nset label 'Average RMSD = " + str(Average_RMSD) + "' at graph 0.01 , graph 0.95 tc lt 7 font 'curior 12'\nplot 'RMSDvsPosition.dat' with boxes\nexit")
+	gnuplot.close()
+	os.system('gnuplot < gnuplot_sets')
+	os.remove('gnuplot_sets')
+	os.remove('temp.dat')
+	return(Average_RMSD)
 
 #8 - De Novo Design
-def DeNovo(number_of_output):
-	''' Preforms De Novo Design on a protein's structure using the BluePrintBDR Mover. Generates only structures with helices (no sheet) '''
-	''' Generates user defined number of DeNovo_#.pdb files each with a different structure '''
-	#1 - Generate a temporary dummy .pdb so the BluePrintBDR mover can work on
-	temp = open('temp.pdb' , 'w')
-	temp.write('ATOM      1  N   ASP C   1      33.210  65.401  53.583  1.00 55.66           N  \nATOM      2  CA  ASP C   1      33.590  64.217  54.411  1.00 55.66           C  \nATOM      3  C   ASP C   1      33.574  62.950  53.542  1.00 52.88           C  \nATOM      4  O   ASP C   1      34.516  62.724  52.780  1.00 50.94           O  \nATOM      5  CB  ASP C   1      32.656  64.090  55.624  1.00 58.39           C  ')
-	temp.close()
-	pose = pose_from_pdb('temp.pdb')
-	RgValue = 9999999999
-	PoseFinal = Pose()
-	for nterm in range(number_of_output):							#Number of different output structures
-		#2 - Generate blueprint file
-		size = random.randint(120 , 130)						#Random protein size
-		#3 - Construct the loops
-		info = list()
-		for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
-			Loop = random.randint(0 , 1)						#Randomly choose weather to add a 3 residue loop or a 4 residue loop
-			if Loop == 0:
-				position = random.randint(1 , size)				#Randomly choose where these loops are added
-				info.append((position , 3))
-			else:
-				position = random.randint(1 , size)
-				info.append((position , 4))
-		#4 - Generate the blueprint file
-		blueprint = open('blueprint' , 'w')
-		for residues in range(size):
-			for x in info:
-				if residues == x[0]:
-					for y in range(x[1]):
-						blueprint.write('0 V ' + 'L' + 'X R\n')		#Loop insert
-			blueprint.write('0 V ' + 'H' + 'X R\n')					#Helix insert
-		blueprint.close()
-		#5 - Run the BluePrintBDR mover
-		mover = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR()
-		mover.num_fragpick(200)
-		mover.use_fullmer(True)
-		mover.use_abego_bias(True)
-		mover.use_sequence_bias(False)
-		mover.max_linear_chainbreak(0.07)
-		mover.ss_from_blueprint(True)
-		mover.dump_pdb_when_fail('')
-		mover.set_constraints_NtoC(-1.0)
-		mover.set_blueprint('blueprint')
-#		sfxn = pyrosetta.create_score_function('ref2015_cst')
-#		mover.set_constraint_file('structure.cst')
-		mover.apply(pose)
-		os.remove('blueprint')
-		#Calculate Radius of Gyration (Rg) and choose lowest Rg score
-		Rg = ScoreFunction()
-		Rg.set_weight(pyrosetta.rosetta.core.scoring.rg , 1)
-		Value = Rg(pose)
-		#print(Value)
-		if Value <= RgValue:
-			RgValue = Value
-			PoseFinal.assign(pose)
-		else:
-			continue
-	PoseFinal.dump_pdb('DeNovo.pdb')
-	os.remove('temp.pdb')
+def DeNovo():
+	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
 #List of All Functions And Their Arguments
 '''
+Remember: DeNovo() , Graft() , Design.Motif() do not export the pose, therefore you must call the pose from the exported .pdb file after each function so the pose can be used by the subsequent function.
 Motif(Protein , Chain , Motif_from , Motif_to)
 Receptor(Protein , RecChain)
 Relax(pose)
 SASA(pose)
 MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
+Design.Pack(pose)
 Design.Motif(pose , Motif_from , Motif_to)
-Fragment.Pack(pose)
-Fragment.Make(pose)
-Fragment.RMSD(pose)
-print(Fragment.Average())
-DeNovo(1000)
-Remember: DeNovo() , Graft() , Design.Motif() do not export the pose, therefore you must call the pose from the exported .pdb file after each function so the pose can be used by the subsequent function.
+Fragments(pose)
+DeNovo()
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Protocol
-
 #1. Build Scaffold
-'''
-while True:
-	DeNovo(100)						#Build scaffold topology by De Novo Design
-	pose = pose_from_pdb('DeNovo.pdb')			#Identify pose
-	Design.Pack(pose)					#Sequence design of topology
-	Fragment.MakeLocal(pose)				#Generate fragments in preparation for Abinitio fold simulation
-	Fragment.RMSD(pose)					#Plot fragment quality (all positions' RMSD should be < 1Å)
-	#Repeat if fragment quality is bad (average RMSD > 2Å)
-	if Fragment.Average() <= 2:
-		break
-	else:
-		continue
-'''
 pose = pose_from_pdb('DeNovo.pdb')
 
 #2. Isolate Motif
@@ -651,7 +572,7 @@ MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
 
 #5. Sequence Design The Structure Around The Motif
 home = os.getcwd()
-for attempt in range(10):
+for attempt in range(20):
 	time.sleep(1)
 	os.chdir(home)
 	pose = pose_from_pdb('grafted.pdb')
@@ -661,12 +582,10 @@ for attempt in range(10):
 
 	#6. Generate Fragments Locally To Test Fragment Quality And Predict Abinitio Fold Simulation Success
 	pose = pose_from_pdb('structure.pdb')
-	Fragment.Make(pose)
-	Fragment.RMSD(pose)
-	print(Fragment.Average())
+	RMSD = Fragments(pose)
 
 	#7. Average Fragment RMSD Should Be < 2Å - If Not Then Repeat
-	if Fragment.Average() <= 2:
+	if RMSD <= 2:
 		break
 	else:
 		continue
