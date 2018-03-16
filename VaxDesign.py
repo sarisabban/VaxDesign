@@ -331,7 +331,7 @@ class Design():
 			MC.set_scorefxn(scorefxn)											#Set score function
 			MC.set_maxtrials(10)												#Set number of monte carlo loops
 			MC.set_temperature(1)												#Set temperature
-			MC.set_preapply(True)												#To apply Boltzmann accept/reject to all applications of the mover (always use False)
+			MC.set_preapply(False)												#To apply Boltzmann accept/reject to all applications of the mover (always use False)
 			MC.set_drift(True)												#Make current pose = next iteration pose
 			MC.set_sampletype('high')											#Move monte carlo to higher filter score
 			#MC.recover_low(True)												#True - at the end of application, the pose is set to the lowest (or highest if sample_type="high") scoring pose
