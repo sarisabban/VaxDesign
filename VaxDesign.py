@@ -436,7 +436,7 @@ def Fragments(pose):
 		'type':'submit'
 	}
 	session = requests.session()
-	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload , files=dict(foo='bar'))		
+	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data = payload , files = dict(foo = 'bar'))		
 	for line in response:
 		line = line.decode()
 		if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line):
@@ -448,7 +448,7 @@ def Fragments(pose):
 	while True:
 		Job = urllib.request.urlopen(JobURL)
 		jobdata = bs4.BeautifulSoup(Job , 'lxml')
-		status = jobdata.find('td', string='Status: ').find_next().text
+		status = jobdata.find('td', string = 'Status: ').find_next().text
 		if status == 'Complete':
 			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
 			break
