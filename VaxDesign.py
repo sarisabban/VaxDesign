@@ -479,7 +479,7 @@ def Fragments(pose):
 	for x in range (int(size)):
 		count +=1
 		#Get the pose and make a copy of it to apply changes to
-		pose_copy = Pose()
+		pose_copy = pyrosetta.Pose()
 		pose_copy.assign(pose)
 		#Setup frame list
 		frames = pyrosetta.rosetta.core.fragment.FrameList()
