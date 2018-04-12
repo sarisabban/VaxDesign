@@ -76,7 +76,7 @@ The script's protocol is as follows:
 1. Get the user defined protein structure and isolate the defined chain
 2. Sequence design the structure (but not the user defined conserved amino acids). If the NO_DESIGN_POSITIONS is left empty the entire protein will be designed (good as a negative control)
 
-The script will not access the Robetta server nor setup any of the Abinitio folding simulation files, it is meant to be used with more manual work from the user than automate the work work.
+The script will not access the Robetta server nor setup any of the Abinitio folding simulation files, it is meant to be used with more manual work from the user than automate the work work. Calculation time is about 3 hours.
 
 Output files are as follows:
 
