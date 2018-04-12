@@ -61,6 +61,7 @@ Output files are as follows:
 
 ## Simple Design
 If you have a strucutre that you want to target, but this structure is less than 150 amino acids and is a ridgid structure (mainly helices and sheets and very little loops), you might get away with just re-designing the structure itself, while keeping the target site(s) conserved, without having to do anything complicated like isolate the motif and graft it onto a scaffold protein (as in the previous script). The code for this protocol is very simple just use the following command:
+
 `python3 Simple.py PDBID CHAIN NO_DESIGN_POSITIONS`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
@@ -68,6 +69,7 @@ If you have a strucutre that you want to target, but this structure is less than
 * NO_DESIGN_POSITIONS = The amino acid positions that you want to conserve (not re-design), i.e: your motif(s)
 
 Example:
+
 `python Simple.py 3WD5 A 19 20 21 22 23 24 65 66 67 68 140 141 143 144 145 146 147 148`
 
 The script's protocol is as follows:
