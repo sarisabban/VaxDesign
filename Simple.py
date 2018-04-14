@@ -47,8 +47,8 @@ def Get(protein , chain , motif):
 	return(NewMotif)
 
 def SASA(filename):
-	''' Calculates the different layers (Surface, Boundery, Core) of a structure according its SASA (solvent-accessible surface area) '''
-	''' Returns three lists Surface amino acids = [0] , Boundery amino acids = [1] , Core amino acids = [2] '''
+	''' Calculates the different layers (Surface, Boundary, Core) of a structure according its SASA (solvent-accessible surface area) '''
+	''' Returns three lists Surface amino acids = [0] , Boundary amino acids = [1] , Core amino acids = [2] '''
 	parser = Bio.PDB.PDBParser()
 	structure = parser.get_structure('X' , filename)
 	dssp = Bio.PDB.DSSP(structure[0] , filename , acc_array = 'Wilke')
@@ -77,7 +77,7 @@ def SASA(filename):
 		elif x[1]=='D' : sasa=193*(x[3])
 		lis.append((x[2] , sasa))
 	surface = list()
-	boundery = list()
+	boundary = list()
 	core = list()
 	count = 0
 	for x , y in lis:
@@ -85,29 +85,29 @@ def SASA(filename):
 		if y <= 25 and (x == '-' or x == 'T' or x == 'S'):
 			core.append(count)
 		elif 25 < y < 40 and (x == '-' or x == 'T' or x == 'S'):
-			boundery.append(count)
+			boundary.append(count)
 		elif y >= 40 and (x == '-' or x == 'T' or x == 'S'):
 			surface.append(count)
 		elif y <= 15 and (x == 'G' or x == 'H' or x == 'I'):
 			core.append(count)
 		elif 15 < y < 60 and (x == 'G' or x == 'H' or x == 'I'):
-			boundery.append(count)
+			boundary.append(count)
 		elif y >= 60 and (x == 'G' or x == 'H' or x == 'I'):
 			surface.append(count)
 		elif y <= 15 and (x == 'B' or x == 'E'):
 			core.append(count)
 		elif 15 < y < 60 and (x == 'B' or x == 'E'):
-			boundery.append(count)
+			boundary.append(count)
 		elif y >= 60 and (x == 'B' or x == 'E'):
 			surface.append(count)	
-	return(surface , boundery , core)
+	return(surface , boundary , core)
 
 def Design(filename , motif):
 	''' Preforms the protein design '''
 	''' Generates the Designed.pdb file '''
 	pose = pose_from_pdb(filename)
 	# A - Relax Original Structure
-#	pyrosetta.rosetta.protocols.moves.AddPyMOLObserver(pose , False)
+	#pyrosetta.rosetta.protocols.moves.AddPyMOLObserver(pose , False)
 	scorefxn = get_fa_scorefxn()
 	relax = pyrosetta.rosetta.protocols.relax.FastRelax(scorefxn)
 	relax.apply(pose)
@@ -123,56 +123,58 @@ def Design(filename , motif):
 		mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , pack)
 		mover.apply(pose)
 	pose.dump_pdb('temp.pdb')
-	# C - Redesign Surface
-	pack = standard_packer_task(pose)
 	Surface = SASA('temp.pdb')[0]
 	os.system('rm temp.pdb')
-	for aa in range(1 , len(pose) + 1):
-		pack.temporarily_set_pack_residue(aa , False)
-	surface = [x for x in Surface if x not in motif]
-	Aminos = ['ALA' , 'CYS' , 'ASP' , 'GLU' , 'PHE' , 'GLY' , 'HIS' , 'HIS_D' , 'ILE' , 'LYS' , 'LEU' , 'MET' , 'ASN' , 'PRO' , 'GLN' , 'ARG' , 'SER' , 'THR' , 'VAL' , 'TRP' , 'TYR']
-	resfile = open('resfile.res' , 'a')
-	resfile.write('ALLAA\nSTART\n')
-	for aa  in surface:
-		x = pose.residue(aa).name()
-		if x == 'CYS:disulphide':
-			continue
-		else:
-			newAminos = list()
-			for res in Aminos:
-				if res == x:
-					continue
-				else:
-					newAminos.append(res)
-		newAminos =['A' if x == 'ALA' else x for x in newAminos]
-		newAminos =['C' if x == 'CYS' else x for x in newAminos]
-		newAminos =['D' if x == 'ASP' else x for x in newAminos]
-		newAminos =['E' if x == 'GLU' else x for x in newAminos]
-		newAminos =['F' if x == 'PHE' else x for x in newAminos]
-		newAminos =['G' if x == 'GLY' else x for x in newAminos]
-		newAminos =['H' if x == 'HIS' else x for x in newAminos]
-		newAminos =['' if x == 'HIS_D' else x for x in newAminos]
-		newAminos =['I' if x == 'ILE' else x for x in newAminos]
-		newAminos =['K' if x == 'LYS' else x for x in newAminos]
-		newAminos =['L' if x == 'LEU' else x for x in newAminos]
-		newAminos =['M' if x == 'MET' else x for x in newAminos]
-		newAminos =['N' if x == 'ASN' else x for x in newAminos]
-		newAminos =['P' if x == 'PRO' else x for x in newAminos]
-		newAminos =['Q' if x == 'GLN' else x for x in newAminos]
-		newAminos =['R' if x == 'ARG' else x for x in newAminos]
-		newAminos =['S' if x == 'SER' else x for x in newAminos]
-		newAminos =['T' if x == 'THR' else x for x in newAminos]
-		newAminos =['V' if x == 'VAL' else x for x in newAminos]
-		newAminos =['W' if x == 'TRP' else x for x in newAminos]
-		newAminos =['Y' if x == 'TYR' else x for x in newAminos]
-		Amins = ''.join(newAminos)
-		resfile.write('{} A PIKAA {}\n'.format(str(aa) , str(Amins)))
-		pack.temporarily_set_pack_residue(aa , True)
-	pyrosetta.rosetta.core.pack.task.parse_resfile(pose , pack , 'resfile.res')
-	resfile.close()
-	mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , pack)
-	mover.apply(pose)
-	os.remove('resfile.res')
+	# C - Redesign Surface
+	for iteration in range(3):
+		pack = standard_packer_task(pose)
+		for aa in range(1 , len(pose) + 1):
+			pack.temporarily_set_pack_residue(aa , False)
+		surface = [x for x in Surface if x not in motif]
+		Aminos = ['ALA' , 'CYS' , 'ASP' , 'GLU' , 'PHE' , 'GLY' , 'HIS' , 'HIS_D' , 'ILE' , 'LYS' , 'LEU' , 'MET' , 'ASN' , 'PRO' , 'GLN' , 'ARG' , 'SER' , 'THR' , 'VAL' , 'TRP' , 'TYR']
+		resfile = open('resfile.res' , 'a')
+		resfile.write('ALLAA\nSTART\n')
+		for aa  in surface:
+			x = pose.residue(aa).name()
+			if x == 'CYS:disulphide':
+				continue
+			else:
+				newAminos = list()
+				for res in Aminos:
+					if res == x:
+						continue
+					else:
+						newAminos.append(res)
+			newAminos =['A' if x == 'ALA' else x for x in newAminos]
+			newAminos =['C' if x == 'CYS' else x for x in newAminos]
+			newAminos =['D' if x == 'ASP' else x for x in newAminos]
+			newAminos =['E' if x == 'GLU' else x for x in newAminos]
+			newAminos =['F' if x == 'PHE' else x for x in newAminos]
+			newAminos =['G' if x == 'GLY' else x for x in newAminos]
+			newAminos =['H' if x == 'HIS' else x for x in newAminos]
+			newAminos =['' if x == 'HIS_D' else x for x in newAminos]
+			newAminos =['I' if x == 'ILE' else x for x in newAminos]
+			newAminos =['K' if x == 'LYS' else x for x in newAminos]
+			newAminos =['L' if x == 'LEU' else x for x in newAminos]
+			newAminos =['M' if x == 'MET' else x for x in newAminos]
+			newAminos =['N' if x == 'ASN' else x for x in newAminos]
+			newAminos =['P' if x == 'PRO' else x for x in newAminos]
+			newAminos =['Q' if x == 'GLN' else x for x in newAminos]
+			newAminos =['R' if x == 'ARG' else x for x in newAminos]
+			newAminos =['S' if x == 'SER' else x for x in newAminos]
+			newAminos =['T' if x == 'THR' else x for x in newAminos]
+			newAminos =['V' if x == 'VAL' else x for x in newAminos]
+			newAminos =['W' if x == 'TRP' else x for x in newAminos]
+			newAminos =['Y' if x == 'TYR' else x for x in newAminos]
+			Amins = ''.join(newAminos)
+			TheLine = '{} A PIKAA {}\n'.format(str(aa) , str(Amins))
+			resfile.write(TheLine)
+			pack.temporarily_set_pack_residue(aa , True)
+		resfile.close()
+		pyrosetta.rosetta.core.pack.task.parse_resfile(pose , pack , 'resfile.res')
+		mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , pack)
+		mover.apply(pose)
+		os.remove('resfile.res')
 	# D - Relax Designed Structure
 	relax.apply(pose)
 	# E - Output Result
