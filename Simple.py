@@ -196,4 +196,4 @@ def Design(filename , motif , surface , resfile):
 #--------------------------------------------------------------------------
 NewMotif , Surface = Get(TheProtein , TheChain , TheMotif)
 Design('Original.pdb' , NewMotif , Surface , 'resfile.res')
-os.system('rm resfile.res')
+os.remove('resfile.res')
