@@ -20,7 +20,11 @@ A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-
 
 Example:
 
-`python3 VaxDesign.py 2y7q A B 420 429`
+`python3 VaxDesign2.py 2y7q A B 420 429`
+
+VaxDesign1.py works with PyRosetta4 python 3.6 release 176 and previous.
+
+VaxDesign2.py works with PyRosetta4 python 3.6 release 177 onwards.
 
 2. Calculation time is about 12 hours on a normal desktop computer for each structure.
 3. Access to the internet is a requirement since the script will be sending and retrieving data from some servers.
