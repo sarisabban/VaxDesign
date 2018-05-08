@@ -454,10 +454,10 @@ def Fragments(pose):
 		jobdata = bs4.BeautifulSoup(Job , 'lxml')
 		status = jobdata.find('td', string = 'Status: ').find_next().text
 		if status == 'Complete':
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , Green , status , Cancel)
 			break
 		else:
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , Red ,status , Cancel)
 			time.sleep(1800)
 			continue
 	#Download
