@@ -600,7 +600,7 @@ class RosettaDesign():
 		print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
 
 #6 - Fragment Generation and Identification
-def Fragments(Pose):
+def Fragments(filename):
 	'''
 	Submits the pose to the Robetta server
 	(http://www.robetta.org) for fragment generation that are
@@ -614,7 +614,7 @@ def Fragments(Pose):
 	RMSD printed in the plot
 	'''
 	#Make the 3-mer and 9-mer fragment files and the PSIPRED file using the Robetta server
-	pose = pose_from_pdb(Pose)
+	pose = pose_from_pdb(filename)
 	sequence = pose.sequence()
 	#Post
 	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
@@ -775,31 +775,31 @@ DeNovo()
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 def protocol():
-	#User Inputs
+	#User inputs
 	Protein		= sys.argv[1]
 	RecChain	= sys.argv[2]
 	Chain		= sys.argv[3]
 	Motif_from	= sys.argv[4]
 	Motif_to	= sys.argv[5]
 
-	#1. Build Scaffold
+	#1. Build scaffold
 	#DeNovo()
 	pose = pose_from_pdb('DeNovo.pdb')
 
-	#2. Isolate Motif
+	#2. Isolate motif
 	Motif(Protein , Chain , Motif_from , Motif_to)
 
-	#3. Isolate Receptor
+	#3. Isolate receptor
 	Receptor(Protein , RecChain)
 
-	#4. Graft Motif onto Scaffold
+	#4. Graft motif onto scaffold
 	MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
 
-	#5. Sequence Design The Structure Around The Motif
+	#5. Sequence design the structure around the motif
 	RosettaDesign.motif_fixbb('grafted.pdb' , MotifPosition[0] , MotifPosition[1])
 
-	#6. Generate Fragments Locally To Test Fragment Quality And Predict Abinitio Fold Simulation Success
-	RMSD = Fragments('structure.pdb')
+	#6. Generate to test fragment quality and predict the Abinitio folding simulation success
+	Fragments('structure.pdb')
 
 if __name__ == '__main__':
 	protocol()
