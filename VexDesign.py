@@ -432,15 +432,7 @@ class RosettaDesign():
 		#Prevent motif residues from being designed
 		for aa in Motif:
 			packtask.temporarily_set_pack_residue(aa , False)
-
-
-
-		design_task = pyrosetta.rosetta.protocols.flxbb.DesignTask()
-		design_task.packertask(packtask)
-
-		mover = pyrosetta.rosetta.protocols.flxbb.FlxbbDesign()
-		mover.add_design_task(design_task)
-
+		mover = pyrosetta.rosetta.protocols.flxbb.FlxbbDesign() 	# Must find a way to pass the packtask to this mover in order to prevent the redesigning of the motif sequence
 		Dscore_before = 0
 		Dpose_work = Pose()
 		Dpose_lowest = Pose()
