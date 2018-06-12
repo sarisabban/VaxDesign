@@ -1,89 +1,5 @@
 #!/usr/bin/python3
 
-'''
-# VexDesign
-A script that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com).
-
-## Requirements:
-1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
-2. Use the following commands (in GNU/Linux) to install all nessesary programs and Python libraries for this script to run successfully:
-
-`sudo apt update && sudo apt install python3-bs4 python3-biopython python3-lxml pymol DSSP gnuplot -y`
-
-## How To Use:
-1. Use the following command to run the script:
-
-`python3 VaxDesign.py PDBID RCHAIN CHAIN FROM TO`
-
-* PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
-* RCHAIN = The chain where your receptor resides within the protein .pdb file
-* CHAIN = The chain where your target site resides (not part of the receptor) within the protein .pdb file
-* FROM = The start of your target site
-* TO = The end of your target site
-
-Example:
-
-`python3 VaxDesign.py 2y7q A B 420 429`
-
-VaxDesign1.py works with PyRosetta4 python 3.6 release 176 and previous.
-
-VaxDesign2.py works with PyRosetta4 python 3.6 release 177 onwards.
-
-2. Calculation time is about 12 hours on a normal desktop computer for each structure.
-3. Access to the internet is a requirement since the script will be sending and retrieving data from some servers.
-4. Use this [Rosetta Abinitio](https://github.com/sarisabban/RosettaAbinitio) script to simulate the folding of the final designed vaccine's protein structure. An HPC (High Preformance Computer) and the original C++ [Rosetta](https://www.rosettacommons.org/) are required for this step.
-
-## Description
-This script autonomously designs a vaccine from a user specified target site. This is not artificial intellegance, you cannot just ask the the script to design "A" vaccine, you must understand what target site you want to develop antibodies against (make a liturature search and understand your disease and target site), then supply this target site to the script to build a protein structure around it so the final protein can be used as a vaccine. You must have prior understanding of Bioinformatics and Immunology in order to be able to understand what site to target and to supply it to the script. Once you identify a target site, the script will take it and run a long protocol, without the need for you to intervene, that will result in an ideal protein structure displaying your target site in its original 3D cofiguration. Thus the protien, theoretically, can be used as a vaccine against this site, and hopefully neutralise the disease you are researching. Everytime you run this script a different final protien structure will be generated, this is important to keep in mind, because if you want to generate many different structures to test or to use as boosts you can simply run the same target site again and you will end up with a different final structure.
-
-This script has been last tested to work well with PyRosetta 4 Release 147 and using Python 3.5. If you use this script on a newer PyRosetta or Python version and it fails please notify me to get it updated.
-
-Here is a [video](youtube.com/) that explains how to select a target site, how the script functions, and what results you sould get. If I did not make a video yet, bug me until I make one.
-
-The script protocol is as follows:
-1. Build Scaffold. --> STILL UNDER DEVELOPMENT --> I am having lots of trouble with De Novo Design (I have a very long temporary work around)
-2. Isolate motif.
-3. Isolate receptor.
-4. Graft motif onto scaffold.
-5. Sequence design the structure around the motif.
-6. Generate fragments for Rosetta Abinitio folding simulation.
-7. If average fragment RMSD is higher than 2Å repeat steps 5 and 6.
-
-Output files are as follows:
-
-|    | File Name               | Description                                                                                  |
-|----|-------------------------|----------------------------------------------------------------------------------------------|
-| 1  | DeNovo.pdb              | Scaffold structure                                                                           |
-| 2  | motif.pdb	       | Original requested motif                                                                     |
-| 3  | receptor.pdb            | Original receptor that binds motif                                                           |
-| 4  | grafted.pdb             | Grafted motif to De Novo structure                                                           |
-| 5  | structure.pdb           | Sequence designed structure                                                                  |
-| 6  | structure.fasta         | Fasta of Rosetta Designed structure                                                          |
-| 7  | frags.200.3mers         | 3-mer fragment of sequence designed structure from the Robetta server                        |
-| 8  | frags.200.9mers         | 9-mer fragment of sequence designed structure from the Robetta server                        |
-| 9  | pre.psipred.ss2         | PSIPRED secondary structure prediction of sequence designed structure from the Robetta server|
-| 10 | plot_frag.pdf           | Plot of the fragment quality RMSD vs Position                                                |
-| 11 | RMSDvsPosition.dat      | plot_frag.pdf's data                                                                         |
-| 12 | FragmentAverageRMSD.dat | Average RMSD of the fragments                                                                |
-'''
-#--------------------------------------------------------------------------------------------------------------------------------------
-#Terminal Text Colours
-Black 	= '\x1b[30m'
-Red	= '\x1b[31m'
-Green	= '\x1b[32m'
-Yellow	= '\x1b[33m'
-Blue	= '\x1b[34m'
-Purple	= '\x1b[35m'
-Cyan	= '\x1b[36m'
-White	= '\x1b[37m'
-Cancel	= '\x1b[0m'
-
-#Welcome Text
-print(Green + '\n  ██╗   ██╗ █████╗ ██╗  ██╗\n  ██║   ██║██╔══██╗╚██╗██╔╝\n  ██║   ██║███████║ ╚███╔╝ \n  ╚██╗ ██╔╝██╔══██║ ██╔██╗ \n   ╚████╔╝ ██║  ██║██╔╝ ██╗\n    ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═╝\n                           \n  ██████╗ ███████╗███████╗██╗ ██████╗ ███╗   ██╗\n  ██╔══██╗██╔════╝██╔════╝██║██╔════╝ ████╗  ██║\n  ██║  ██║█████╗  ███████╗██║██║  ███╗██╔██╗ ██║\n  ██║  ██║██╔══╝  ╚════██║██║██║   ██║██║╚██╗██║\n  ██████╔╝███████╗███████║██║╚██████╔╝██║ ╚████║\n  ╚═════╝ ╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝\n                                                ' + Cancel)
-print(Purple + '  ╔═╗┬ ┬┌┬┐┌─┐  ╔╦╗┌─┐┌─┐┬┌─┐┌┐┌  ╔═╗  ╦  ╦┌─┐┌─┐┌─┐┬┌┐┌┌─┐\n  ╠═╣│ │ │ │ │   ║║├┤ └─┐││ ┬│││  ╠═╣  ╚╗╔╝├─┤│  │  ││││├┤ \n  ╩ ╩└─┘ ┴ └─┘  ═╩╝└─┘└─┘┴└─┘┘└┘  ╩ ╩   ╚╝ ┴ ┴└─┘└─┘┴┘└┘└─┘' + Cancel)
-print(Yellow + 'Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)' + Cancel)
-print(Cyan + '--------------------------------------------------------------' + Cancel)
-
 #Import Modules
 import sys
 import os
@@ -100,6 +16,23 @@ from Bio import pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
+
+#Terminal Text Colours
+Black 	= '\x1b[30m'
+Red	= '\x1b[31m'
+Green	= '\x1b[32m'
+Yellow	= '\x1b[33m'
+Blue	= '\x1b[34m'
+Purple	= '\x1b[35m'
+Cyan	= '\x1b[36m'
+White	= '\x1b[37m'
+Cancel	= '\x1b[0m'
+
+#Welcome Text
+print(Green + '\n  ██╗   ██╗ █████╗ ██╗  ██╗\n  ██║   ██║██╔══██╗╚██╗██╔╝\n  ██║   ██║███████║ ╚███╔╝ \n  ╚██╗ ██╔╝██╔══██║ ██╔██╗ \n   ╚████╔╝ ██║  ██║██╔╝ ██╗\n    ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═╝\n                           \n  ██████╗ ███████╗███████╗██╗ ██████╗ ███╗   ██╗\n  ██╔══██╗██╔════╝██╔════╝██║██╔════╝ ████╗  ██║\n  ██║  ██║█████╗  ███████╗██║██║  ███╗██╔██╗ ██║\n  ██║  ██║██╔══╝  ╚════██║██║██║   ██║██║╚██╗██║\n  ██████╔╝███████╗███████║██║╚██████╔╝██║ ╚████║\n  ╚═════╝ ╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝\n                                                ' + Cancel)
+print(Purple + '  ╔═╗┬ ┬┌┬┐┌─┐  ╔╦╗┌─┐┌─┐┬┌─┐┌┐┌  ╔═╗  ╦  ╦┌─┐┌─┐┌─┐┬┌┐┌┌─┐\n  ╠═╣│ │ │ │ │   ║║├┤ └─┐││ ┬│││  ╠═╣  ╚╗╔╝├─┤│  │  ││││├┤ \n  ╩ ╩└─┘ ┴ └─┘  ═╩╝└─┘└─┘┴└─┘┘└┘  ╩ ╩   ╚╝ ┴ ┴└─┘└─┘┴┘└┘└─┘' + Cancel)
+print(Yellow + 'Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)' + Cancel)
+print(Cyan + '--------------------------------------------------------------' + Cancel)
 #--------------------------------------------------------------------------------------------------------------------------------------
 #The Functions
 
@@ -123,14 +56,17 @@ def Motif(PDB_ID , Chain , Motif_From , Motif_To):
 			continue
 		if not line.split()[4] == Chain:				#Ignore all lines that do not have the specified chain (column 5)
 			continue
-		if int(Motif_From) <= int(line.split()[5]) <= int(Motif_To):	#Find residues between the user specified location
-			count += 1						#Sequencially number atoms
-			AA1 = line[23:27]					#Sequencially number residues
-			if not AA1 == AA2:
-				num += 1			
-			final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
-			AA2 = AA1
-			Motif.write(final_line)					#Write to new file called motif.pdb
+		try:
+			if int(Motif_From) <= int(line.split()[5]) <= int(Motif_To):	#Find residues between the user specified location
+				count += 1						#Sequencially number atoms
+				AA1 = line[23:27]					#Sequencially number residues
+				if not AA1 == AA2:
+					num += 1			
+				final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
+				AA2 = AA1
+				Motif.write(final_line)					#Write to new file called motif.pdb
+		except:
+			continue
 	Motif.close()
 
 #2 - Extract Receptor
@@ -249,7 +185,7 @@ class RosettaDesign():
 	def __init__(self):
 		pass
 
-	#5.1 - BLAST 
+	#5.1 - BLAST
 	def BLAST(self , filename1 , filename2):
 		'''
 		Performs a BLAST alignment between two sequences and prints
@@ -264,9 +200,9 @@ class RosettaDesign():
 		percentage = (similarity * 100) / total
 		print(seq1)
 		print(seq2)
-		print('Sequence Similarity: {}%'.format(percentage))
+		print('Sequence Similarity: {}%'.format(round(percentage , 3)))
 
-	#5.2 - Preforms RosettaDesign
+	#5.2 - Performs fixbb RosettaDesign
 	def fixbb(self , filename , relax_iters , design_iters):
 		'''
 		Performs the RosettaDesign protocol to change a structure's
@@ -299,18 +235,66 @@ class RosettaDesign():
 		#B - Perform fixbb RosettaDesign
 		packtask = standard_packer_task(pose)
 		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , packtask)
-		backrub = pyrosetta.rosetta.protocols.backrub.BackrubMover()
-		backrub.pivot_residues(pose)
-		GMC = pyrosetta.rosetta.protocols.monte_carlo.GenericMonteCarloMover()
-		GMC.set_mover(backrub)
-		GMC.set_scorefxn(scorefxn)
-		GMC.set_maxtrials(500)
-		GMC.set_temperature(1.0)
-		GMC.set_preapply(False)
-		GMC.set_recover_low(True)
-		mover = pyrosetta.rosetta.protocols.moves.SequenceMover()
-		mover.add_mover(pack)
-		mover.add_mover(GMC)#####<--- problem here not accepting not rejecting moves
+		Dscore_before = 0
+		Dpose_work = Pose()
+		Dpose_lowest = Pose()
+		Dscores = []
+		Dscores.append(Dscore_before)
+		for nstruct in range(design_iters):
+			Dpose_work.assign(pose)
+			pack.apply(Dpose_work)
+			Dscore_after = scorefxn(Dpose_work)
+			Dscores.append(Dscore_after)
+			if Dscore_after < Dscore_before:
+				Dscore_before = Dscore_after
+				Dpose_lowest.assign(Dpose_work)
+			else:
+				continue
+		pose.assign(Dpose_lowest)
+		DFinalScore = scorefxn(pose)
+		#C - Output Result
+		pose.dump_pdb('structure.pdb')
+		#D - Print report
+		print('==================== Result Report ====================')
+		print('Relax Scores:\n' , Rscores)
+		print('Chosen Lowest Score:' , RFinalScore , '\n')
+		print('Design Scores:\n' , Dscores)
+		print('Chosen Lowest Score:' , DFinalScore , '\n')
+		print('BLAST result, comparing the original structure to the designed structure:')
+		RosettaDesign.BLAST(self , filename , 'structure.pdb')
+
+	#5.3 - Performs flxbb RosettaDesign
+	def flxbb(self , filename , relax_iters , design_iters):
+		'''
+		Performs the RosettaDesign protocol to change a structure's
+		amino acid sequence while allowing for a flexible backbone.
+		Generates the structure.pdb file
+		'''
+		#A - Relax original structure
+		pose = pose_from_pdb(filename)
+		chain = pose.pdb_info().chain(1)
+		scorefxn = get_fa_scorefxn()
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		Rscore_before = scorefxn(pose)
+		Rpose_work = Pose()
+		Rpose_lowest = Pose()
+		Rscores = []
+		Rscores.append(Rscore_before)
+		for nstruct in range(relax_iters):
+			Rpose_work.assign(pose)
+			relax.apply(Rpose_work)
+			Rscore_after = scorefxn(Rpose_work)
+			Rscores.append(Rscore_after)
+			if Rscore_after < Rscore_before:
+				Rscore_before = Rscore_after
+				Rpose_lowest.assign(Rpose_work)
+			else:
+				continue
+		pose.assign(Rpose_lowest)
+		RFinalScore = scorefxn(pose)
+		#B - Perform flxbb RosettaDesign
+		mover = pyrosetta.rosetta.protocols.flxbb.FlxbbDesign()
 		Dscore_before = 0
 		Dpose_work = Pose()
 		Dpose_lowest = Pose()
@@ -336,17 +320,17 @@ class RosettaDesign():
 		print('Chosen Lowest Score:' , RFinalScore , '\n')
 		print('Design Scores:\n' , Dscores)
 		print('Chosen Lowest Score:' , DFinalScore , '\n')
-		print('BLAST result, compairing the original structure to the designed structure:')
+		print('BLAST result, comparing the original structure to the designed structure:')
 		RosettaDesign.BLAST(self , filename , 'structure.pdb')
 
-	#5.3 - Preforms RosettaDesign for the whole protein except the motif
-	def motif_fixbb(self , filename , Motif_From , Motif_To):
+	#5.4 - Preforms fixbb RosettaDesign for the whole protein except the motif
+	def motif_fixbb(self , filename , Motif_From , Motif_To , relax_iters , design_iters):
 		'''
-		Applies RosettaDesign to change the structure's
-		amino acids (one layer at a time - like in the
-		Design_Layer method) except for a desired
-		continuous motif sequence while maintaining the
-		same backbone.
+		Applies RosettaDesign with a fixed back bone to 
+		change the structure's amino acids (one layer at
+		a time - like in the Design_Layer method) except
+		for a desired continuous motif sequence while
+		maintaining the same backbone.
 		Just updates the pose with the new structure
 		'''
 		#A - Relax original structure
@@ -372,26 +356,91 @@ class RosettaDesign():
 				continue
 		pose.assign(Rpose_lowest)
 		RFinalScore = scorefxn(pose)
-		#B - Perform fixbb RosettaDesign without the motif residues
+		#B - Perform flxbb RosettaDesign without the motif residues
 		packtask = standard_packer_task(pose)
 		#Identify motif residues
 		Motif = list(range(int(Motif_From) , int(Motif_To) + 1))
 		#Prevent motif residues from being designed
 		for aa in Motif:
-			pack.temporarily_set_pack_residue(aa , False)
+			packtask.temporarily_set_pack_residue(aa , False)
 		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , packtask)
-		backrub = pyrosetta.rosetta.protocols.backrub.BackrubMover()
-		backrub.pivot_residues(pose)
-		GMC = pyrosetta.rosetta.protocols.monte_carlo.GenericMonteCarloMover()
-		GMC.set_mover(backrub)
-		GMC.set_scorefxn(scorefxn)
-		GMC.set_maxtrials(500)
-		GMC.set_temperature(1.0)
-		GMC.set_preapply(False)
-		GMC.set_recover_low(True)
-		mover = pyrosetta.rosetta.protocols.moves.SequenceMover()
-		mover.add_mover(pack)
-		mover.add_mover(GMC)#####<--- problem here not accepting not rejecting moves
+		Dscore_before = 0
+		Dpose_work = Pose()
+		Dpose_lowest = Pose()
+		Dscores = []
+		Dscores.append(Dscore_before)
+		for nstruct in range(design_iters):
+			Dpose_work.assign(pose)
+			pack.apply(Dpose_work)
+			Dscore_after = scorefxn(Dpose_work)
+			Dscores.append(Dscore_after)
+			if Dscore_after < Dscore_before:
+				Dscore_before = Dscore_after
+				Dpose_lowest.assign(Dpose_work)
+			else:
+				continue
+		pose.assign(Dpose_lowest)
+		DFinalScore = scorefxn(pose)
+		#C - Output Result
+		pose.dump_pdb('structure.pdb')
+		#D - Print report
+		print('==================== Result Report ====================')
+		print('Relax Scores:\n' , Rscores)
+		print('Chosen Lowest Score:' , RFinalScore , '\n')
+		print('Design Scores:\n' , Dscores)
+		print('Chosen Lowest Score:' , DFinalScore , '\n')
+		print('BLAST result, comparing the original structure to the designed structure:')
+		RosettaDesign.BLAST(self , filename , 'structure.pdb')
+
+	#5.5 - Preforms flxbb RosettaDesign for the whole protein except the motif
+	def motif_flxbb(self , filename , Motif_From , Motif_To , relax_iters , design_iters):
+		'''
+		Applies RosettaDesign with a flexible back bone to
+		change the structure's amino acids (one layer at a
+		time - like in the Design_Layer method) except for
+		a desired continuous motif sequence while maintaining
+		the same backbone.
+		Just updates the pose with the new structure
+		'''
+		#A - Relax original structure
+		pose = pose_from_pdb(filename)
+		chain = pose.pdb_info().chain(1)
+		scorefxn = get_fa_scorefxn()
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		Rscore_before = scorefxn(pose)
+		Rpose_work = Pose()
+		Rpose_lowest = Pose()
+		Rscores = []
+		Rscores.append(Rscore_before)
+		for nstruct in range(relax_iters):
+			Rpose_work.assign(pose)
+			relax.apply(Rpose_work)
+			Rscore_after = scorefxn(Rpose_work)
+			Rscores.append(Rscore_after)
+			if Rscore_after < Rscore_before:
+				Rscore_before = Rscore_after
+				Rpose_lowest.assign(Rpose_work)
+			else:
+				continue
+		pose.assign(Rpose_lowest)
+		RFinalScore = scorefxn(pose)
+		#B - Perform flxbb RosettaDesign without the motif residues
+		packtask = standard_packer_task(pose)
+		#Identify motif residues
+		Motif = list(range(int(Motif_From) , int(Motif_To) + 1))
+		#Prevent motif residues from being designed
+		for aa in Motif:
+			packtask.temporarily_set_pack_residue(aa , False)
+
+
+
+		design_task = pyrosetta.rosetta.protocols.flxbb.DesignTask()
+		design_task.packertask(packtask)
+
+		mover = pyrosetta.rosetta.protocols.flxbb.FlxbbDesign()
+		mover.add_design_task(design_task)
+
 		Dscore_before = 0
 		Dpose_work = Pose()
 		Dpose_lowest = Pose()
@@ -417,11 +466,11 @@ class RosettaDesign():
 		print('Chosen Lowest Score:' , RFinalScore , '\n')
 		print('Design Scores:\n' , Dscores)
 		print('Chosen Lowest Score:' , DFinalScore , '\n')
-		print('BLAST result, compairing the original structure to the designed structure:')
+		print('BLAST result, comparing the original structure to the designed structure:')
 		RosettaDesign.BLAST(self , filename , 'structure.pdb')
 
 #6 - Fragment Generation and Identification
-def Fragments(filename):
+def Fragments(filename , username):
 	'''
 	Submits the pose to the Robetta server
 	(http://www.robetta.org) for fragment generation that are
@@ -439,7 +488,7 @@ def Fragments(filename):
 	#Post
 	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
 	payload = {
-		'UserName':'ac.research',
+		'UserName':username,
 		'Email':'',
 		'Notes':'structure',
 		'Sequence':sequence,
@@ -575,28 +624,16 @@ def Fragments(filename):
 	os.remove('gnuplot_sets')
 	os.remove('temp.dat')
 	return(Average_RMSD)
-
-
-
-
-
-
-#7 - DeNovo Design ###### MAYBE FORGET ABOUT GAN AND IMPLEMENT EPIGRAFTING   only of the required small dataset
-def GAN():
-	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
 #List of All Functions And Their Arguments
 '''
-Remember: DeNovo() , Graft() , Design.Motif() do not export the pose, therefore you must call the pose from the exported .pdb file after each function so the pose can be used by the subsequent function.
-Motif(Protein , Chain , Motif_from , Motif_to)
-Receptor(Protein , RecChain)
-Relax(pose)
-SASA(pose)
-MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
-Design.Pack(pose)
-Design.Motif(pose , Motif_from , Motif_to)
-Fragments(pose)
-GAN()
+1   -	Motif(Protein , Chain , Motif_from , Motif_to)
+2   -	Receptor(Protein , RecChain)
+3   -	Relax(pose)
+4   -	MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
+5   -	RD = RosettaDesign()
+5.4 -	RD.motif_fixbb('grafted.pdb' , MotifPosition[0] , MotifPosition[1] , 50 , 100)
+6   -	Fragments(pose)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 def protocol():
@@ -606,10 +643,11 @@ def protocol():
 	Chain		= sys.argv[3]
 	Motif_from	= sys.argv[4]
 	Motif_to	= sys.argv[5]
+	Scaffold	= sys.argv[6]
+	UserName	= sys.argv[7]
 
-	#1. Build scaffold
-	#GAN()										##### <-------- Requires Work
-	pose = pose_from_pdb('generated.pdb')
+	#1. Import scaffold
+	pose = pose_from_pdb(Scaffold)
 
 	#2. Isolate motif
 	Motif(Protein , Chain , Motif_from , Motif_to)
@@ -618,13 +656,14 @@ def protocol():
 	Receptor(Protein , RecChain)
 
 	#4. Graft motif onto scaffold
-	MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)			##### <-------- Requires Work
+	MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
 
 	#5. Sequence design the structure around the motif
-	RosettaDesign.motif_fixbb('grafted.pdb' , MotifPosition[0] , MotifPosition[1])	##### <-------- Requires Work
+	RD = RosettaDesign()
+	RD.motif_fixbb('grafted.pdb' , MotifPosition[0] , MotifPosition[1] , 50 , 100)
 
 	#6. Generate to test fragment quality and predict the Abinitio folding simulation success
-	Fragments('structure.pdb')
+	Fragments('structure.pdb' , UserName)
 
 if __name__ == '__main__':
 	protocol()

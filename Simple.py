@@ -1,78 +1,16 @@
 #!/usr/bin/python3
 
-import os , numpy , Bio.PDB
+import os
+import numpy
+import Bio.PDB
 from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
 
-TheProtein = sys.argv[1]
-TheChain = sys.argv[2]
-TheMotif = list(map(int , sys.argv[3:]))
-#--------------------------------------------------------------------------
-def SASA(filename):
-	'''
-	Calculates the different layers (Surface, Boundary, Core) of a 
-	structure according its SASA (solvent-accessible surface area)
-	Returns three lists Surface amino acids = [0] , Boundary amino 
-	acids = [1] , Core amino acids = [2]
-	'''
-	parser = Bio.PDB.PDBParser()
-	structure = parser.get_structure('X' , filename)
-	dssp = Bio.PDB.DSSP(structure[0] , filename , acc_array = 'Wilke')
-	lis = list()
-	count = 0
-	for x in dssp:
-		if   x[1] == 'A' : sasa = 129 * (x[3])
-		elif x[1] == 'V' : sasa = 174 * (x[3])
-		elif x[1] == 'I' : sasa = 197 * (x[3])
-		elif x[1] == 'L' : sasa = 201 * (x[3])
-		elif x[1] == 'M' : sasa = 224 * (x[3])
-		elif x[1] == 'P' : sasa = 159 * (x[3])
-		elif x[1] == 'Y' : sasa = 263 * (x[3])
-		elif x[1] == 'F' : sasa = 240 * (x[3])
-		elif x[1] == 'W' : sasa = 285 * (x[3])
-		elif x[1] == 'R' : sasa = 274 * (x[3])
-		elif x[1] == 'C' : sasa = 167 * (x[3])
-		elif x[1] == 'N' : sasa = 195 * (x[3])
-		elif x[1] == 'Q' : sasa = 225 * (x[3])
-		elif x[1] == 'E' : sasa = 223 * (x[3])
-		elif x[1] == 'G' : sasa = 104 * (x[3])
-		elif x[1] == 'H' : sasa = 224 * (x[3])
-		elif x[1] == 'K' : sasa = 236 * (x[3])
-		elif x[1] == 'S' : sasa = 155 * (x[3])
-		elif x[1] == 'T' : sasa = 172 * (x[3])
-		elif x[1] == 'D' : sasa = 193 * (x[3])
-		lis.append((x[2] , sasa))
-	surface = list()
-	boundary = list()
-	core = list()
-	count = 0
-	for x , y in lis:
-		count = count + 1
-		if y <= 25 and (x == '-' or x == 'T' or x == 'S'):
-			core.append(count)
-		elif 25 < y < 40 and (x == '-' or x == 'T' or x == 'S'):
-			boundary.append(count)
-		elif y >= 40 and (x == '-' or x == 'T' or x == 'S'):
-			surface.append(count)
-		elif y <= 15 and (x == 'G' or x == 'H' or x == 'I'):
-			core.append(count)
-		elif 15 < y < 60 and (x == 'G' or x == 'H' or x == 'I'):
-			boundary.append(count)
-		elif y >= 60 and (x == 'G' or x == 'H' or x == 'I'):
-			surface.append(count)
-		elif y <= 15 and (x == 'B' or x == 'E'):
-			core.append(count)
-		elif 15 < y < 60 and (x == 'B' or x == 'E'):
-			boundary.append(count)
-		elif y >= 60 and (x == 'B' or x == 'E'):
-			surface.append(count)	
-	return(surface , boundary , core)
-
 def Get(protein , chain , motif):
 	'''
 	Get a protein and isolates the desired chain Generates the 
-	Original.pdb file
+	original.pdb file
 	'''
 	# A - Get Structure
 	pose = pose_from_rcsb(protein)
@@ -90,7 +28,7 @@ def Get(protein , chain , motif):
 	os.remove('{}.clean.pdb'.format(protein))
 	os.remove('{}.pdb'.format(protein))
 	pdb = open('temp.pdb' , 'r')
-	NewFile = open('Original.pdb' , 'w')
+	NewFile = open('original.pdb' , 'w')
 	count = 0
 	num = 0
 	AA2 = None
@@ -110,90 +48,93 @@ def Get(protein , chain , motif):
 	NewFile.close()
 	os.remove('temp.pdb')
 	NewMotif = [numpy.absolute(AA - FirstAA) for  AA in motif]
-	# C - Generate A Resfile of The Surface
-	Surface = SASA('Original.pdb')[0]
-	surface = [x for x in Surface if x not in NewMotif]
-	Aminos = ['ALA' , 'CYS' , 'ASP' , 'GLU' , 'PHE' , 
-		  'GLY' , 'HIS' , 'HIS_D' , 'ILE' , 'LYS' , 
-		  'LEU' , 'MET' , 'ASN' , 'PRO' , 'GLN' , 
-		  'ARG' , 'SER' , 'THR' , 'VAL' , 'TRP' , 'TYR']
-	resfile = open('resfile.res' , 'a')
-	resfile.write('ALLAA\nSTART\n')
-	for aa  in surface:
-		x = pose.residue(aa).name()
-		if x == 'CYS:disulphide':
-			continue
-		else:
-			newAminos = list()
-			for res in Aminos:
-				if res == x:
-					continue
-				else:
-					newAminos.append(res)
-		newAminos =['A' if x == 'ALA' else x for x in newAminos]
-		newAminos =['C' if x == 'CYS' else x for x in newAminos]
-		newAminos =['D' if x == 'ASP' else x for x in newAminos]
-		newAminos =['E' if x == 'GLU' else x for x in newAminos]
-		newAminos =['F' if x == 'PHE' else x for x in newAminos]
-		newAminos =['G' if x == 'GLY' else x for x in newAminos]
-		newAminos =['H' if x == 'HIS' else x for x in newAminos]
-		newAminos =['' if x == 'HIS_D' else x for x in newAminos]
-		newAminos =['I' if x == 'ILE' else x for x in newAminos]
-		newAminos =['K' if x == 'LYS' else x for x in newAminos]
-		newAminos =['L' if x == 'LEU' else x for x in newAminos]
-		newAminos =['M' if x == 'MET' else x for x in newAminos]
-		newAminos =['N' if x == 'ASN' else x for x in newAminos]
-		newAminos =['P' if x == 'PRO' else x for x in newAminos]
-		newAminos =['Q' if x == 'GLN' else x for x in newAminos]
-		newAminos =['R' if x == 'ARG' else x for x in newAminos]
-		newAminos =['S' if x == 'SER' else x for x in newAminos]
-		newAminos =['T' if x == 'THR' else x for x in newAminos]
-		newAminos =['V' if x == 'VAL' else x for x in newAminos]
-		newAminos =['W' if x == 'TRP' else x for x in newAminos]
-		newAminos =['Y' if x == 'TYR' else x for x in newAminos]
-		Amins = ''.join(newAminos)
-		TheLine = '{} A PIKAA {}\n'.format(str(aa) , str(Amins))
-		resfile.write(TheLine)
-	resfile.close()
-	return(NewMotif , surface)
+	return(NewMotif)
 
-def Design(filename , motif , surface , resfile):
+def BLAST(filename1 , filename2):
 	'''
-	Preforms the protein design Generates the Designed.pdb file
+	Performs a BLAST alignment between two sequences and prints
+	the sequences as well as the percentage of sequence
+	similarity
 	'''
+	seq1 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('filename1' , filename1) , aa_only = True)[0].get_sequence()
+	seq2 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('filename2' , filename2) , aa_only = True)[0].get_sequence()
+	alignment = pairwise2.align.globalxx(seq1 , seq2)
+	total = alignment[0][4]
+	similarity = alignment[0][2]
+	percentage = (similarity * 100) / total
+	print(seq1)
+	print(seq2)
+	print('Sequence Similarity: {}%'.format(round(percentage , 3)))
+
+def fixbb(filename , motif , relax_iters , design_iters):
+	'''
+	Performs the RosettaDesign protocol to change a structure's
+	amino acid sequence while maintaining a fixed backbone.
+	Generates the structure.pdb file
+	'''
+	#A - Relax original structure
 	pose = pose_from_pdb(filename)
-	# A - Relax Original Structure
-	#pyrosetta.rosetta.protocols.moves.AddPyMOLObserver(pose , False)
+	chain = pose.pdb_info().chain(1)
 	scorefxn = get_fa_scorefxn()
-	relax = pyrosetta.rosetta.protocols.relax.FastRelax(scorefxn)
-	relax.apply(pose)
-	# B - Preform Design
-	for iteration in range(3):
-		pack = standard_packer_task(pose)
-		for aa in motif:
-			x = pose.residue(aa).name()
-			if x == 'CYS:disulphide':
-				continue
-			else:
-				pack.temporarily_set_pack_residue(aa , \
-				False)
-		mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , pack)
-		mover.apply(pose)
-	# C - Redesign Surface
-	for x in range(3):
-		pack = standard_packer_task(pose)
-		pack.temporarily_fix_everything()
-		pyrosetta.rosetta.core.pack.task.parse_resfile(pose , \
-		pack , resfile)
-		for aa  in surface:
-			pack.temporarily_set_pack_residue(aa , True)
-		mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , pack)
-		mover.apply(pose)
-	# D - Relax Designed Structure
-	relax.apply(pose)
-	# E - Output Result
-	pose.dump_pdb('Designed.pdb')
-#--------------------------------------------------------------------------
-NewMotif , Surface = Get(TheProtein , TheChain , TheMotif)
-Design('Original.pdb' , NewMotif , Surface , 'resfile.res')
-os.remove('resfile.res')
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	Rscore_before = scorefxn(pose)
+	Rpose_work = Pose()
+	Rpose_lowest = Pose()
+	Rscores = []
+	Rscores.append(Rscore_before)
+	for nstruct in range(relax_iters):
+		Rpose_work.assign(pose)
+		relax.apply(Rpose_work)
+		Rscore_after = scorefxn(Rpose_work)
+		Rscores.append(Rscore_after)
+		if Rscore_after < Rscore_before:
+			Rscore_before = Rscore_after
+			Rpose_lowest.assign(Rpose_work)
+		else:
+			continue
+	pose.assign(Rpose_lowest)
+	RFinalScore = scorefxn(pose)
+	#B - Perform fixbb RosettaDesign without the motif residues
+	packtask = standard_packer_task(pose)
+	for aa in motif:
+		packtask.temporarily_set_pack_residue(aa , False)
+	packtask = standard_packer_task(pose)
+	pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , packtask)
+	Dscore_before = 0
+	Dpose_work = Pose()
+	Dpose_lowest = Pose()
+	Dscores = []
+	Dscores.append(Dscore_before)
+	for nstruct in range(design_iters):
+		Dpose_work.assign(pose)
+		pack.apply(Dpose_work)
+		Dscore_after = scorefxn(Dpose_work)
+		Dscores.append(Dscore_after)
+		if Dscore_after < Dscore_before:
+			Dscore_before = Dscore_after
+			Dpose_lowest.assign(Dpose_work)
+		else:
+			continue
+	pose.assign(Dpose_lowest)
+	DFinalScore = scorefxn(pose)
+	#C - Output Result
+	pose.dump_pdb('structure.pdb')
+	#D - Print report
+	print('==================== Result Report ====================')
+	print('Relax Scores:\n' , Rscores)
+	print('Chosen Lowest Score:' , RFinalScore , '\n')
+	print('Design Scores:\n' , Dscores)
+	print('Chosen Lowest Score:' , DFinalScore , '\n')
+	print('BLAST result, comparing the original structure to the designed structure:')
+	BLAST(filename , 'structure.pdb')
+
+def main():
+	TheProtein = sys.argv[1]
+	TheChain = sys.argv[2]
+	TheMotif = list(map(int , sys.argv[3:]))
+	Motif = Get(TheProtein , TheChain , TheMotif)
+	fixbb('original.pdb' , Motif , 50 , 100)
+
+if __name__ == '__main__':
+	main()
