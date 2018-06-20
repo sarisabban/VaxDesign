@@ -24,6 +24,8 @@ Example:
 
 `python3 Scaffold.py 2y7q A B 420 429 ./Database`
 
+If you want to setup/update your own scaffold database (look inside the Database_Setup directory for the required scripts), collect structures (80-150 amino acids) into a directory and name it *Database*, then you must rosetta relax these structures before they can be used, use the following command to relax all the structures inside your Database directory: `python3 relax.py Database` (~5 minutes per structure) you will get back a directory called *Relaxed* with all the relaxed structures in it. If you have a large database (like that one I provide) you can speed up the relaxation process by segmenting the database using `python3 chunk.py Database PATH`, which will result in many text files each containing the paths to 100 structures, then process them in a HPC (High Performance Cluster Supercomputer) using the script `relax.pbs` (this last script only uses [Rosetta C++](https://www.rosettacommons.org/).
+
 3. The script will generate a directory called **Scaffolds** which will comtain all the scaffold structures. Search through the directory and choose one scaffold (move it to the working directory next to the VexDesign.py script). If no scaffold are chosen there are other ways to continue this protocol (contact me), I am trying to research a more robust and main stream protocol to graft any motif (but it is taking time).
 4. Generate a vaccine using the following command:
 
