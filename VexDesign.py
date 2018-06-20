@@ -37,7 +37,7 @@ print(Cyan + '--------------------------------------------------------------' + 
 #The Functions
 
 #1 - Extract Motif
-def Motif(PDB_ID , Chain , Motif_From , Motif_To):
+def Motif(PDB_ID, Chain, Motif_From, Motif_To):
 	'''
 	This function downloads a spesific protein from RCSB
 	and isolates a specific user defined motif from it
@@ -45,39 +45,39 @@ def Motif(PDB_ID , Chain , Motif_From , Motif_To):
 	'''
 	#Get the protein
 	os.system('wget http://www.rcsb.org/pdb/files/' + PDB_ID + '.pdb')
-	pdb = open(PDB_ID + '.pdb' , 'r')
+	pdb = open(PDB_ID + '.pdb', 'r')
 	#Isolate the motif
-	Motif = open('motif.pdb' , 'w')
+	Motif = open('motif.pdb', 'w')
 	count = 0
 	num = 0
 	AA2 = None
 	for line in pdb:
-		if not line.startswith('ATOM'):					#Ignore all lines that do not start with ATOM
+		if not line.startswith('ATOM'):														#Ignore all lines that do not start with ATOM
 			continue
-		if not line.split()[4] == Chain:				#Ignore all lines that do not have the specified chain (column 5)
+		if not line.split()[4] == Chain:													#Ignore all lines that do not have the specified chain (column 5)
 			continue
 		try:
-			if int(Motif_From) <= int(line.split()[5]) <= int(Motif_To):	#Find residues between the user specified location
-				count += 1						#Sequencially number atoms
-				AA1 = line[23:27]					#Sequencially number residues
+			if int(Motif_From) <= int(line.split()[5]) <= int(Motif_To):									#Find residues between the user specified location
+				count += 1														#Sequencially number atoms
+				AA1 = line[23:27]													#Sequencially number residues
 				if not AA1 == AA2:
 					num += 1			
 				final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
 				AA2 = AA1
-				Motif.write(final_line)					#Write to new file called motif.pdb
+				Motif.write(final_line)													#Write to new file called motif.pdb
 		except:
 			continue
 	Motif.close()
 
 #2 - Extract Receptor
-def Receptor(PDB_ID , Chain):
+def Receptor(PDB_ID, Chain):
 	'''
 	This function isolates a chain from a downloaded .pdb file 
 	Generates the receptor.pdb file
 	'''
 	#Isolate the receptor
-	pdb = open(PDB_ID + '.pdb' , 'r')
-	Receptor = open('receptor.pdb' , 'w')
+	pdb = open(PDB_ID + '.pdb', 'r')
+	Receptor = open('receptor.pdb', 'w')
 	for line in pdb:
 		linesplit = line.split()
 		if linesplit[0] == 'ATOM':
@@ -99,7 +99,7 @@ def Relax(pose):
 	relax.apply(pose)
 
 #4 - Grafting
-def Graft(receptor , motif , scaffold):
+def Graft(receptor, motif, scaffold):
 	'''
 	Grafts a motif onto a protein scaffold structure
 	Generates structure.pdb and returns a tuple [0] is the
@@ -115,7 +115,7 @@ def Graft(receptor , motif , scaffold):
 		spots.append(str(resi + 1))
 	hotspots = ':'.join(spots)
 	#Setup grafting mover
-	mover.init_parameters(receptor , motif , 1.0 , 2 , 5 , '0:0' , '0:0' , 'ALA' , hotspots , True , False , True , False , False , True , False)
+	mover.init_parameters(receptor, motif, 1.0, 2, 5, '0:0', '0:0', 'ALA', hotspots, True, False, True, False, False, True, False)
 	'''
 	context_structure				= 'receptor.pdb'
 	motif_structure					= 'motif.pdb'
@@ -138,8 +138,8 @@ def Graft(receptor , motif , scaffold):
 	print(scorefxn(scaffold))
 	scaffold.dump_pdb('temp.pdb')
 	#Extract grafted structure
-	pdb = open('temp.pdb' , 'r')
-	Structure = open('temp2.pdb' , 'w')
+	pdb = open('temp.pdb', 'r')
+	Structure = open('temp2.pdb', 'w')
 	for line in pdb:
 		linesplit = line.split()
 		if linesplit != []:
@@ -150,8 +150,8 @@ def Graft(receptor , motif , scaffold):
 	#Keep working directory clean
 	os.remove('temp.pdb')
 	#Renumber .pdb file starting at 1
-	newpdb = open('temp2.pdb' , 'r')
-	thenewfile = open('grafted.pdb' , 'w')
+	newpdb = open('temp2.pdb', 'r')
+	thenewfile = open('grafted.pdb', 'w')
 	count = 0
 	num = 0
 	AA2 = None
@@ -172,7 +172,7 @@ def Graft(receptor , motif , scaffold):
 	GRAFT = graftpose.sequence()													#Get graft sequence
 	start = GRAFT.index(MOTIF) + 1													#Identify start residue
 	finish = start + len(MOTIF) - 1													#Identify end residue
-	return((start , finish))													#Return values [0] = Motif_From [1] = Motif_To
+	return((start, finish))														#Return values [0] = Motif_From [1] = Motif_To
 
 #5 - RosettaDesign
 class RosettaDesign():
@@ -186,24 +186,24 @@ class RosettaDesign():
 		pass
 
 	#5.1 - BLAST
-	def BLAST(self , filename1 , filename2):
+	def BLAST(self, filename1, filename2):
 		'''
 		Performs a BLAST alignment between two sequences and prints
 		the sequences as well as the percentage of sequence
 		similarity
 		'''
-		seq1 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('filename1' , filename1) , aa_only = True)[0].get_sequence()
-		seq2 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('filename2' , filename2) , aa_only = True)[0].get_sequence()
-		alignment = pairwise2.align.globalxx(seq1 , seq2)
+		seq1 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET=True).get_structure('filename1', filename1), aa_only=True)[0].get_sequence()
+		seq2 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET=True).get_structure('filename2', filename2), aa_only=True)[0].get_sequence()
+		alignment = pairwise2.align.globalxx(seq1, seq2)
 		total = alignment[0][4]
 		similarity = alignment[0][2]
-		percentage = (similarity * 100) / total
+		percentage = (similarity*100)/total
 		print(seq1)
 		print(seq2)
-		print('Sequence Similarity: {}%'.format(round(percentage , 3)))
+		print('Sequence Similarity: {}%'.format(round(percentage, 3)))
 
 	#5.2 - Performs fixbb RosettaDesign
-	def fixbb(self , filename , relax_iters , design_iters):
+	def fixbb(self, filename, relax_iters, design_iters):
 		'''
 		Performs the RosettaDesign protocol to change a structure's
 		amino acid sequence while maintaining a fixed backbone.
@@ -234,7 +234,7 @@ class RosettaDesign():
 		RFinalScore = scorefxn(pose)
 		#B - Perform fixbb RosettaDesign
 		packtask = standard_packer_task(pose)
-		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , packtask)
+		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, packtask)
 		Dscore_before = 0
 		Dpose_work = Pose()
 		Dpose_lowest = Pose()
@@ -253,18 +253,18 @@ class RosettaDesign():
 		pose.assign(Dpose_lowest)
 		DFinalScore = scorefxn(pose)
 		#C - Output Result
-		pose.dump_pdb('structure.pdb')
+		pose.dump_pdb('fixbb.pdb')
 		#D - Print report
 		print('==================== Result Report ====================')
-		print('Relax Scores:\n' , Rscores)
-		print('Chosen Lowest Score:' , RFinalScore , '\n')
-		print('Design Scores:\n' , Dscores)
-		print('Chosen Lowest Score:' , DFinalScore , '\n')
+		print('Relax Scores:\n', Rscores)
+		print('Chosen Lowest Score:', RFinalScore, '\n')
+		print('Design Scores:\n', Dscores)
+		print('Chosen Lowest Score:', DFinalScore, '\n')
 		print('BLAST result, comparing the original structure to the designed structure:')
-		RosettaDesign.BLAST(self , filename , 'structure.pdb')
+		RosettaDesign.BLAST(self, filename, 'fixbb.pdb')
 
 	#5.3 - Performs flxbb RosettaDesign
-	def flxbb(self , filename , relax_iters , design_iters):
+	def flxbb(self, filename, relax_iters, design_iters):
 		'''
 		Performs the RosettaDesign protocol to change a structure's
 		amino acid sequence while allowing for a flexible backbone.
@@ -313,18 +313,357 @@ class RosettaDesign():
 		pose.assign(Dpose_lowest)
 		DFinalScore = scorefxn(pose)
 		#C - Output Result
-		pose.dump_pdb('structure.pdb')
+		pose.dump_pdb('flxbb.pdb')
 		#D - Print report
 		print('==================== Result Report ====================')
-		print('Relax Scores:\n' , Rscores)
-		print('Chosen Lowest Score:' , RFinalScore , '\n')
-		print('Design Scores:\n' , Dscores)
-		print('Chosen Lowest Score:' , DFinalScore , '\n')
+		print('Relax Scores:\n', Rscores)
+		print('Chosen Lowest Score:', RFinalScore, '\n')
+		print('Design Scores:\n', Dscores)
+		print('Chosen Lowest Score:', DFinalScore, '\n')
 		print('BLAST result, comparing the original structure to the designed structure:')
-		RosettaDesign.BLAST(self , filename , 'structure.pdb')
+		RosettaDesign.BLAST(self, filename, 'flxbb.pdb')
 
-	#5.4 - Preforms fixbb RosettaDesign for the whole protein except the motif
-	def motif_fixbb(self , filename , Motif_From , Motif_To , relax_iters , design_iters):
+	#5.4 - Find amino acids in wrong layer
+	def Layers(self, filename):
+		'''
+		This function will calculate the solvent-accessible surface area
+		(SASA) and the secondary structure for each amino acid within a
+		protein and points out the amino acids that are in the wrong layer.
+		Returns a list of all positions to be mutated.
+		'''
+		#Identify SASA and secondary structure for each residue
+		parser = Bio.PDB.PDBParser()
+		structure = parser.get_structure('{}'.format(filename), filename)
+		dssp = Bio.PDB.DSSP(structure[0], filename, acc_array='Wilke')
+		sasalist = []
+		for x in dssp:
+			if x[1] == 'A':
+				sasa = 129*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'V':
+				sasa = 174*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'I':
+				sasa = 197*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'L':
+				sasa = 201*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'M':
+				sasa = 224*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'P':
+				sasa = 159*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'Y':
+				sasa = 263*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'F':
+				sasa = 240*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'W':
+				sasa = 285*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'R':
+				sasa = 274*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'N':
+				sasa = 195*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'C':
+				sasa = 167*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'Q':
+				sasa = 225*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'E':
+				sasa = 223*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'G':
+				sasa = 104*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'H':
+				sasa = 224*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'K':
+				sasa = 236*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'S':
+				sasa = 155*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'T':
+				sasa = 172*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			elif x[1] == 'D':
+				sasa = 193*(x[3])
+				if sasa <= 25:
+					sasa = 'C'
+				elif 25 < sasa < 40:
+					sasa = 'B'
+				elif sasa >= 40:
+					sasa = 'S'
+			if x[2] == 'G' or x[2] == 'H' or x[2] == 'I':
+				ss = 'H'
+			elif x[2] == 'B' or x[2] == 'E':
+				ss = 'S'
+			elif x[2] == 'S' or x[2] == 'T' or x[2] == '-':
+				ss = 'L'
+			sasalist.append((x[0], x[1], ss, sasa)) #(number, residue, secondary structure, SASA)
+		#Identify residues in the wrong layer to mutate
+		Resids = []
+		SecStr = []
+		SASAps = []
+		MutPos = []
+		Mutate = []
+		for n, r, s, a in sasalist:
+			if a == 'S' and s == 'L' and (	   r == 'P' or r == 'G' 
+							or r == 'N' or r == 'Q'
+							or r == 'S' or r == 'T'
+							or r == 'D' or r == 'E'
+							or r == 'R' or r == 'K'
+							or r == 'H'):
+				MutPos.append(' ')
+			elif a=='B' and s=='L' and (	   r == 'A' or r == 'V'
+							or r == 'I' or r == 'L'
+							or r == 'F' or r == 'Y'
+							or r == 'W' or r == 'G'
+							or r == 'N' or r == 'Q'
+							or r == 'S' or r == 'T'
+							or r == 'P' or r == 'D'
+							or r == 'E' or r == 'H'
+							or r == 'R'):
+				MutPos.append(' ')
+			elif a=='C' and s=='L' and (	   r == 'A' or r == 'V'
+							or r == 'I' or r == 'L'
+							or r == 'P' or r == 'F'
+							or r == 'W' or r == 'M'):
+				MutPos.append(' ')
+			elif a=='S' and s=='H' and (	   r == 'Q' or r == 'E'
+							or r == 'K' or r == 'H'):
+				MutPos.append(' ')
+			elif a=='B' and s=='H' and (	   r == 'A' or r == 'V'
+							or r == 'I' or r == 'L'
+							or r == 'W' or r == 'Q'
+							or r == 'E' or r == 'K'
+							or r == 'F' or r == 'M'):
+				MutPos.append(' ')
+			elif a=='C' and s=='H' and (	   r == 'A' or r == 'V'
+							or r == 'I' or r == 'L'
+							or r == 'F' or r == 'W'):
+				MutPos.append(' ')
+			elif a=='S' and s=='S' and (	   r == 'Q' or r == 'T'
+							or r == 'Y'):
+				MutPos.append(' ')
+			elif a=='B' and s=='S' and (	   r == 'A' or r == 'V'
+							or r == 'I' or r == 'L'
+							or r == 'F' or r == 'Y'
+							or r == 'W' or r == 'Q'
+							or r == 'T' or r == 'M'):
+				MutPos.append(' ')
+			elif a=='C' and s=='S' and (	   r == 'A' or r == 'V'
+							or r == 'I' or r == 'L'
+							or r == 'F' or r == 'W'
+							or r == 'M'):
+				MutPos.append(' ')
+			else:
+				MutPos.append('*')
+				Mutate.append((n, r, s, a))		
+			Resids.append(r)
+			SASAps.append(a)
+			SecStr.append(s)
+		Resids=''.join(Resids)
+		SASAps=''.join(SASAps)
+		MutPos=''.join(MutPos)
+		SecStr=''.join(SecStr)
+		print('------------------------------')
+		print('{}\n{}\n{}\n{}'.format(Resids, SecStr, SASAps, MutPos))
+		return(Mutate)
+
+	#5.4 - Refine structure
+	def Refine(self, filename, mutations, refine_iters):
+		'''
+		This function takes the list of amino acids from the Layers()
+		function that are in the wrong layer and mutates the structure by
+		changing these position intothe preferred amino acids for the
+		respective layer and secondary structure. Then refines the
+		structure in an attempt to generate an ideal protein structure.
+		Generates the refined.pdb file.
+		'''
+		pose = pose_from_pdb(filename)
+		scorefxn = get_fa_scorefxn()
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		ideal = pyrosetta.rosetta.protocols.idealize.IdealizeMover()
+		#A - Generate a resfile
+		resfile = open('structure.res', 'a')
+		resfile.write('NATRO\nSTART\n')
+		for n, r, s, a in mutations:
+			if s == 'L' and a == 'S':
+				line = '{} A PIKAA PGNQSTDERKH\n'.format(n)
+				resfile.write(line)
+			elif s == 'H' and a == 'S':
+				line = '{} A PIKAA QEKH\n'.format(n)
+				resfile.write(line)
+			elif s == 'S' and a == 'S':
+				line = '{} A PIKAA QTY\n'.format(n)
+				resfile.write(line)
+			elif s == 'L' and a == 'B':
+				line = '{} A PIKAA AVILFYWGNQSTPDEKR\n'.format(n)
+				resfile.write(line)
+			elif s == 'H' and a == 'B':
+				line = '{} A PIKAA AVILWQEKFM\n'.format(n)
+				resfile.write(line)
+			elif s == 'S' and a == 'B':
+				line = '{} A PIKAA AVILFYWQTM\n'.format(n)
+				resfile.write(line)
+			elif s == 'L' and a == 'C':
+				line = '{} A PIKAA AVILPFWM\n'.format(n)
+				resfile.write(line)
+			elif s == 'H' and a == 'C':
+				line = '{} A PIKAA AVILFWM\n'.format(n)
+				resfile.write(line)
+			elif s == 'S' and a == 'C':
+				line = '{} A PIKAA AVILFWM\n'.format(n)
+				resfile.write(line)
+		resfile.close()
+		#B - Refinement
+		pack = standard_packer_task(pose)
+		pack.temporarily_fix_everything()
+		pyrosetta.rosetta.core.pack.task.parse_resfile(pose, pack, 'structure.res')
+		for n, r, s, a in mutations:
+			x = pose.residue(n).name()
+			if x == 'CYS:disulphide':
+				continue
+			else:
+				pack.temporarily_set_pack_residue(n, True) 
+		print(pack)
+		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, pack)
+		Dscore_before = 0
+		Dpose_work = Pose()
+		Dpose_lowest = Pose()
+		Dscores = []
+		Dscores.append(Dscore_before)
+		for nstruct in range(refine_iters):
+			Dpose_work.assign(pose)
+			pack.apply(Dpose_work)
+			ideal.apply(pose)
+			relax.apply(Dpose_work)
+			Dscore_after = scorefxn(Dpose_work)
+			Dscores.append(Dscore_after)
+			if Dscore_after < Dscore_before:
+				Dscore_before = Dscore_after
+				Dpose_lowest.assign(Dpose_work)
+			else:
+				continue
+		pose.assign(Dpose_lowest)
+		DFinalScore = scorefxn(pose)
+		#C - Output Result
+		pose.dump_pdb('structure.pdb')
+		os.remove('structure.res')
+		#D - Print report
+		print('==================== Result Report ====================')
+		print('Refine Scores:\n', Dscores)
+		print('Chosen Lowest Score:', DFinalScore, '\n')
+		RosettaDesign.BLAST(self, sys.argv[2], 'structure.pdb')
+		RosettaDesign.Layers(self, 'structure.pdb')
+
+	#5.6 - Preforms flxbb RosettaDesign for the whole protein except the motif
+	def motif_fixbb(self, filename, Motif_From, Motif_To, relax_iters, design_iters):
 		'''
 		Applies RosettaDesign with a fixed back bone to 
 		change the structure's amino acids (one layer at
@@ -359,11 +698,11 @@ class RosettaDesign():
 		#B - Perform flxbb RosettaDesign without the motif residues
 		packtask = standard_packer_task(pose)
 		#Identify motif residues
-		Motif = list(range(int(Motif_From) , int(Motif_To) + 1))
+		Motif = list(range(int(Motif_From), int(Motif_To) + 1))
 		#Prevent motif residues from being designed
 		for aa in Motif:
-			packtask.temporarily_set_pack_residue(aa , False)
-		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , packtask)
+			packtask.temporarily_set_pack_residue(aa, False)
+		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, packtask)
 		Dscore_before = 0
 		Dpose_work = Pose()
 		Dpose_lowest = Pose()
@@ -385,15 +724,15 @@ class RosettaDesign():
 		pose.dump_pdb('structure.pdb')
 		#D - Print report
 		print('==================== Result Report ====================')
-		print('Relax Scores:\n' , Rscores)
-		print('Chosen Lowest Score:' , RFinalScore , '\n')
-		print('Design Scores:\n' , Dscores)
-		print('Chosen Lowest Score:' , DFinalScore , '\n')
+		print('Relax Scores:\n', Rscores)
+		print('Chosen Lowest Score:', RFinalScore, '\n')
+		print('Design Scores:\n', Dscores)
+		print('Chosen Lowest Score:', DFinalScore, '\n')
 		print('BLAST result, comparing the original structure to the designed structure:')
-		RosettaDesign.BLAST(self , filename , 'structure.pdb')
+		RosettaDesign.BLAST(self, filename, 'structure.pdb')
 
-	#5.5 - Preforms flxbb RosettaDesign for the whole protein except the motif
-	def motif_flxbb(self , filename , Motif_From , Motif_To , relax_iters , design_iters):
+	#5.5 - Preforms fixbb RosettaDesign for the whole protein except the motif
+	def motif_flxbb(self, filename, Motif_From, Motif_To, relax_iters, design_iters):
 		'''
 		Applies RosettaDesign with a flexible back bone to
 		change the structure's amino acids (one layer at a
@@ -428,11 +767,11 @@ class RosettaDesign():
 		#B - Perform flxbb RosettaDesign without the motif residues
 		packtask = standard_packer_task(pose)
 		#Identify motif residues
-		Motif = list(range(int(Motif_From) , int(Motif_To) + 1))
+		Motif = list(range(int(Motif_From), int(Motif_To) + 1))
 		#Prevent motif residues from being designed
 		for aa in Motif:
-			packtask.temporarily_set_pack_residue(aa , False)
-		mover = pyrosetta.rosetta.protocols.flxbb.FlxbbDesign() 	# Must find a way to pass the packtask to this mover in order to prevent the redesigning of the motif sequence
+			packtask.temporarily_set_pack_residue(aa, False)
+		mover = pyrosetta.rosetta.protocols.flxbb.FlxbbDesign()################# Must find a way to pass the packtask to this mover in order to prevent the redesigning of the motif sequence
 		Dscore_before = 0
 		Dpose_work = Pose()
 		Dpose_lowest = Pose()
@@ -454,15 +793,15 @@ class RosettaDesign():
 		pose.dump_pdb('structure.pdb')
 		#D - Print report
 		print('==================== Result Report ====================')
-		print('Relax Scores:\n' , Rscores)
-		print('Chosen Lowest Score:' , RFinalScore , '\n')
-		print('Design Scores:\n' , Dscores)
-		print('Chosen Lowest Score:' , DFinalScore , '\n')
+		print('Relax Scores:\n', Rscores)
+		print('Chosen Lowest Score:', RFinalScore, '\n')
+		print('Design Scores:\n', Dscores)
+		print('Chosen Lowest Score:', DFinalScore, '\n')
 		print('BLAST result, comparing the original structure to the designed structure:')
-		RosettaDesign.BLAST(self , filename , 'structure.pdb')
+		RosettaDesign.BLAST(self, filename, 'structure.pdb')
 
 #6 - Fragment Generation and Identification
-def Fragments(filename , username):
+def Fragments(filename, username):
 	'''
 	Submits the pose to the Robetta server
 	(http://www.robetta.org) for fragment generation that are
@@ -489,44 +828,43 @@ def Fragments(filename , username):
 		'ChemicalShifts':'',
 		'NoeConstraints':'',
 		'DipolarConstraints':'',
-		'type':'submit'
-	}
+		'type':'submit'}
 	session = requests.session()
-	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload , files=dict(foo='bar'))		
+	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload, files=dict(foo='bar'))		
 	for line in response:
 		line = line.decode()
-		if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line):
-			JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line)
+		if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line):
+			JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line)
 	JobURL = 'http://www.robetta.org/' + JobID[0]
 	#Check
 	ID = JobID[0].split('=')
 	print('Job ID: ' + str(ID[1]))
 	while True:
 		Job = urllib.request.urlopen(JobURL)
-		jobdata = bs4.BeautifulSoup(Job , 'lxml')
+		jobdata = bs4.BeautifulSoup(Job, 'lxml')
 		status = jobdata.find('td', string='Status: ').find_next().text
 		if status == 'Complete':
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', status)
 			break
 		else:
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', status)
 			time.sleep(1800)
 			continue
 	#Download
 	sequence = pose.sequence()
-	fasta = open('structure.fasta' , 'w')
+	fasta = open('structure.fasta', 'w')
 	fasta.write(sequence)
 	fasta.close()
 	time.sleep(1)
 	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
 	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
 	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
-	os.rename('aat000_03_05.200_v1_3' , 'frags.200.3mers')
-	os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
-	os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
+	os.rename('aat000_03_05.200_v1_3', 'frags.200.3mers')
+	os.rename('aat000_09_05.200_v1_3', 'frags.200.9mers')
+	os.rename('t000_.psipred_ss2', 'pre.psipred.ss2')
 	#Calculate the best fragment's RMSD at each position
-	frag = open('frags.200.9mers' , 'r')
-	rmsd = open('temp.dat' , 'w')
+	frag = open('frags.200.9mers', 'r')
+	rmsd = open('temp.dat', 'w')
 	for line in frag:
 		if line.lstrip().startswith('position:'):
 			line = line.split()
@@ -543,23 +881,23 @@ def Fragments(filename , username):
 		#Setup the 9-mer fragment (9-mer is better than 3-mer for this analysis)
 		fragset = pyrosetta.rosetta.core.fragment.ConstantLengthFragSet(9)
 		fragset.read_fragment_file('frags.200.9mers')
-		fragset.frames(count , frames)
+		fragset.frames(count, frames)
 		#Setup the MoveMap
 		movemap = MoveMap()
 		movemap.set_bb(True)
 		#Setup and apply the fragment inserting mover
 		for frame in frames:
-			for frag_num in range( 1 , frame.nr_frags() + 1 ):
-				frame.apply(movemap , frag_num , pose_copy)
+			for frag_num in range(1, frame.nr_frags() + 1 ):
+				frame.apply(movemap, frag_num, pose_copy)
 				#Measure the RMSD difference between the original pose and the new changed pose (the copy)
-				RMSD = rosetta.core.scoring.CA_rmsd(pose , pose_copy)
-				print(RMSD , '\t' , count)
+				RMSD = rosetta.core.scoring.CA_rmsd(pose, pose_copy)
+				print(RMSD, '\t', count)
 				rmsd.write(str(RMSD) + '\t' + str(count) + '\n')
 				#Reset the copy pose to original pose
 				pose_copy.assign(pose)
 	rmsd.close()
 	#Analyse the RMSD file to get the lowest RMSD for each position
-	data = open('RMSDvsPosition.dat' , 'w')
+	data = open('RMSDvsPosition.dat', 'w')
 	lowest = {} 												#Mapping group number -> lowest value found
 	for line in open('temp.dat'):
 		parts = line.split()
@@ -579,16 +917,16 @@ def Fragments(filename , username):
 		data.write(str(position) + '\t' + str(rmsd) + '\n')
 	data.close()
 	#Calculate the average RMSD of the fragments
-	data = open('RMSDvsPosition.dat' , 'r')
+	data = open('RMSDvsPosition.dat', 'r')
 	value = 0
 	for line in data:
 		line = line.split()
 		RMSD = float(line[1])
 		value = value + RMSD
 		count = int(line[0])
-	Average_RMSD = round(value / count , 2)
+	Average_RMSD = round(value / count, 2)
 	#Plot the results
-	gnuplot = open('gnuplot_sets' , 'w')
+	gnuplot = open('gnuplot_sets', 'w')
 	gnuplot.write("""
 	reset\n
 	set terminal postscript\n
@@ -607,7 +945,7 @@ def Fragments(filename , username):
 	set key off\n
 	set boxwidth 0.5\n
 	set style fill solid\n
-	set label 'Average RMSD = {}' at graph 0.01 , graph 0.95 tc lt 7 font 'curior 12'\n
+	set label 'Average RMSD = {}' at graph 0.01, graph 0.95 tc lt 7 font 'curior 12'\n
 	plot 'RMSDvsPosition.dat' with boxes\n
 	exit
 	""".format(str(Average_RMSD)))
@@ -617,14 +955,15 @@ def Fragments(filename , username):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 #--------------------------------------------------------------------------------------------------------------------------------------
-#List of All Functions And Their Arguments
+#List of all functions and their arguments
 '''
-1   -	Motif(Protein , Chain , Motif_from , Motif_to)
-2   -	Receptor(Protein , RecChain)
+1   -	Motif(Protein, Chain, Motif_from, Motif_to)
+2   -	Receptor(Protein, RecChain)
 3   -	Relax(pose)
-4   -	MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
+4   -	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
 5   -	RD = RosettaDesign()
-5.4 -	RD.motif_fixbb('grafted.pdb' , MotifPosition[0] , MotifPosition[1] , 50 , 100)
+5.4 -	RD.motif_fixbb('grafted.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
+5.5 -	RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
 6   -	Fragments(pose)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
@@ -637,25 +976,20 @@ def protocol():
 	Motif_to	= sys.argv[5]
 	Scaffold	= sys.argv[6]
 	UserName	= sys.argv[7]
-
 	#1. Import scaffold
 	pose = pose_from_pdb(Scaffold)
-
 	#2. Isolate motif
-	Motif(Protein , Chain , Motif_from , Motif_to)
-
+	Motif(Protein, Chain, Motif_from, Motif_to)
 	#3. Isolate receptor
-	Receptor(Protein , RecChain)
-
+	Receptor(Protein, RecChain)
 	#4. Graft motif onto scaffold
-	MotifPosition = Graft('receptor.pdb' , 'motif.pdb' , pose)
-
+	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
 	#5. Sequence design the structure around the motif
 	RD = RosettaDesign()
-	RD.motif_fixbb('grafted.pdb' , MotifPosition[0] , MotifPosition[1] , 50 , 100)
-
+	RD.motif_fixbb('grafted.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
+	RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
 	#6. Generate to test fragment quality and predict the Abinitio folding simulation success
-	Fragments('structure.pdb' , UserName)
+	Fragments('structure.pdb', UserName)
 
 if __name__ == '__main__':
 	protocol()

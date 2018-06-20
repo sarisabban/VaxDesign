@@ -86,62 +86,35 @@ def MotifGraft(receptor, motif, scaffold, RMSD):
 	revert_graft_to_native_sequence			= 'True'
 	allow_repeat_same_graft_output			= 'False'
 	'''
-	filename = scaffold.split('.')[0]
 	pose = pose_from_pdb(scaffold)
 	mover.apply(pose)
 	print(scorefxn(pose))
-	pose.dump_pdb('temp.pdb')
-	#Extract grafted structure
-	pdb = open('temp.pdb', 'r')
-	Structure = open('temp2.pdb', 'w')
-	for line in pdb:
-		linesplit = line.split()
-		if linesplit != []:
-			if linesplit[0] == 'ATOM':
-				if linesplit[4] == 'B':
-					Structure.write(line)
-	Structure.close()
-	#Keep working directory clean
-	os.remove('temp.pdb')
-	#Renumber .pdb file starting at 1
-	newpdb = open('temp2.pdb', 'r')
-	thenewfile = open('{}_grafted.pdb'.format(filename), 'w')
-	count = 0
-	num = 0
-	AA2 = None
-	for line in newpdb:
-		count += 1
-		AA1 = line[23:27]
-		if not AA1 == AA2:
-			num += 1			
-		final_line = line[:7]+'{:4d}'.format(count)+line[11:17]+line[17:21]+'A'+'{:4d}'.format(num)+line[26:]
-		AA2 = AA1
-		thenewfile.write(final_line)
-	thenewfile.close()
-	os.remove('temp2.pdb')
 
 def main():
-	PDBID = '2y7q'
-	MotifChain = 'B'
-	MotifFrom = 420
-	MotifTo = 429
-	ReceptorChain = 'A'
-	directory = 'Database'
+	#User inputs
+	Protein		= sys.argv[1]
+	RecChain	= sys.argv[2]
+	Chain		= sys.argv[3]
+	Motif_From	= sys.argv[4]
+	Motif_To	= sys.argv[5]
+	Directory	= sys.argv[6]
 
-	hotspots = Motif(PDBID, MotifChain, MotifFrom, MotifTo)
-	Receptor(PDBID, ReceptorChain)
+	hotspots = Motif(Protein, Chain, Motif_From, Motif_To)
+	Receptor(Protein, RecChain)
 
-	os.mkdir('Grafts')
+	os.mkdir('Scaffolds')
 	current = os.getcwd()
-	database = os.listdir(directory)
-	os.chdir(directory)
+	database = os.listdir(Directory)
+	os.chdir(Directory)
 	print('\x1b[33m'+'Motif Grafting'+'\x1b[0m')
 	for scaffold in database:
 		try:
 			MotifGraft('../receptor.pdb', '../motif.pdb', scaffold, 1.0)
-			os.system('mv *_grafted.pdb ../Grafts')
+			os.system('cp {} ../Scaffolds'.format(scaffold))
 		except:
 			continue
+	os.remove('../receptor.pdb')
+	os.remove('../motif.pdb')
 
 if __name__ == '__main__':
 	main()
