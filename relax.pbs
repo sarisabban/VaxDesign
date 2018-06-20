@@ -7,4 +7,4 @@
 #PBS -J 52
 cd $PBS_O_WORKDIR
 
-/app/biology/Rosetta_3.7/main/source/bin/relax.default.linuxgccrelease -l PDB${PBS_ARRAY_INDEX}.list -nstruct 1
+{ROSETTA}/main/source/bin/relax.default.linuxgccrelease -l PDB${PBS_ARRAY_INDEX}.list -nstruct 1
