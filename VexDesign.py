@@ -52,19 +52,19 @@ def Motif(PDB_ID, Chain, Motif_From, Motif_To):
 	num = 0
 	AA2 = None
 	for line in pdb:
-		if not line.startswith('ATOM'):														#Ignore all lines that do not start with ATOM
+		if not line.startswith('ATOM'):																								#Ignore all lines that do not start with ATOM
 			continue
-		if not line.split()[4] == Chain:													#Ignore all lines that do not have the specified chain (column 5)
+		if not line.split()[4] == Chain:																							#Ignore all lines that do not have the specified chain (column 5)
 			continue
 		try:
-			if int(Motif_From) <= int(line.split()[5]) <= int(Motif_To):									#Find residues between the user specified location
-				count += 1														#Sequencially number atoms
-				AA1 = line[23:27]													#Sequencially number residues
+			if int(Motif_From) <= int(line.split()[5]) <= int(Motif_To):															#Find residues between the user specified location
+				count += 1																											#Sequencially number atoms
+				AA1 = line[23:27]																									#Sequencially number residues
 				if not AA1 == AA2:
 					num += 1			
 				final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
 				AA2 = AA1
-				Motif.write(final_line)													#Write to new file called motif.pdb
+				Motif.write(final_line)																								#Write to new file called motif.pdb
 		except:
 			continue
 	Motif.close()
@@ -156,23 +156,23 @@ def Graft(receptor, motif, scaffold):
 	num = 0
 	AA2 = None
 	for line in newpdb:
-		count += 1														#Sequencially number atoms
-		AA1 = line[23:27]													#Sequencially number residues
+		count += 1																											#Sequencially number atoms
+		AA1 = line[23:27]																									#Sequencially number residues
 		if not AA1 == AA2:
 			num += 1			
 		final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
 		AA2 = AA1
-		thenewfile.write(final_line)												#Write to new file called motif.pdb
+		thenewfile.write(final_line)																						#Write to new file called motif.pdb
 	thenewfile.close()
 	os.remove('temp2.pdb')
 	#Identify start and finish residue number of inserted motif
-	motifpose = pose_from_pdb('motif.pdb')												#Input motif structure as a pose
-	graftpose = pose_from_pdb('grafted.pdb')											#Input graft structure as a pose
-	MOTIF = motifpose.sequence()													#Get motif sequence
-	GRAFT = graftpose.sequence()													#Get graft sequence
-	start = GRAFT.index(MOTIF) + 1													#Identify start residue
-	finish = start + len(MOTIF) - 1													#Identify end residue
-	return((start, finish))														#Return values [0] = Motif_From [1] = Motif_To
+	motifpose = pose_from_pdb('motif.pdb')																					#Input motif structure as a pose
+	graftpose = pose_from_pdb('grafted.pdb')																				#Input graft structure as a pose
+	MOTIF = motifpose.sequence()																							#Get motif sequence
+	GRAFT = graftpose.sequence()																							#Get graft sequence
+	start = GRAFT.index(MOTIF) + 1																							#Identify start residue
+	finish = start + len(MOTIF) - 1																							#Identify end residue
+	return((start, finish))																									#Return values [0] = Motif_From [1] = Motif_To
 
 #5 - RosettaDesign
 class RosettaDesign():
@@ -616,7 +616,7 @@ class RosettaDesign():
 				ss = 'S'
 			elif x[2] == 'S' or x[2] == 'T' or x[2] == '-':
 				ss = 'L'
-			sasalist.append((x[0], x[1], ss, sasa)) #(number, residue, secondary structure, SASA)
+			sasalist.append((x[0], x[1], ss, sasa))																			#(number, residue, secondary structure, SASA)
 		#Identify residues in the wrong layer to mutate
 		Resids = []
 		SecStr = []
@@ -1011,14 +1011,14 @@ def Fragments(filename, username):
 	rmsd.close()
 	#Analyse the RMSD file to get the lowest RMSD for each position
 	data = open('RMSDvsPosition.dat', 'w')
-	lowest = {} 												#Mapping group number -> lowest value found
+	lowest = {}																											#Mapping group number -> lowest value found
 	for line in open('temp.dat'):
 		parts = line.split()
-		if len(parts) != 2:										#Only lines with two items on it
+		if len(parts) != 2:																								#Only lines with two items on it
 			continue
 		first = float(parts[0])
 		second = int(parts[1])
-		if first == 0: 											#Skip line with 0.0 RMSD (this is an error from the 9-mer fragment file). I don't know why it happens
+		if first == 0:																									#Skip line with 0.0 RMSD (this is an error from the 9-mer fragment file). I don't know why it happens
 			continue
 		if second not in lowest:
 			lowest[second] = first
@@ -1067,17 +1067,23 @@ def Fragments(filename, username):
 	os.remove('gnuplot_sets')
 	os.remove('temp.dat')
 	return(Average_RMSD)
+
+#7 - Fold From Loop
+def FFL(filename):
+	pose = pose_from_pdb(filename)
+	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
 #List of all functions and their arguments
 '''
-1   -	Motif(Protein, Chain, Motif_from, Motif_to)
-2   -	Receptor(Protein, RecChain)
-3   -	Relax(pose)
-4   -	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
-5   -	RD = RosettaDesign()
-5.4 -	RD.motif_fixbb('grafted.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
-5.5 -	RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
-6   -	Fragments(pose)
+1	-	Motif(Protein, Chain, Motif_from, Motif_to)
+2	-	Receptor(Protein, RecChain)
+3	-	Relax(pose)
+4	-	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
+5	-	FFL('grafted.pdb')
+6	-	RD = RosettaDesign()
+6.4	-	RD.motif_fixbb('ffl.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
+6.5	-	RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
+7	-	Fragments(pose)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 def protocol():
@@ -1097,12 +1103,13 @@ def protocol():
 	Receptor(Protein, RecChain)
 	#4. Graft motif onto scaffold
 	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
-	#5. Sequence design the structure around the motif
+	#5. Fold From Loop
+	#FFL('grafted.pdb')
+	#6. Sequence design the structure around the motif
 	RD = RosettaDesign()
-	RD.motif_fixbb('grafted.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
+	RD.motif_fixbb('ffl.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
 	RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
-	#6. Generate to test fragment quality and predict the Abinitio folding simulation success
+	#7. Generate fragments and test their quality to predict the Abinitio folding simulation success
 	Fragments('structure.pdb', UserName)
 
-if __name__ == '__main__':
-	protocol()
+if __name__ == '__main__': protocol()
