@@ -1,17 +1,43 @@
 #!/usr/bin/python3
 
+'''
+MIT License
+
+Copyright (c) 2017 Sari Sabban
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+
 #Import Modules
-import sys
 import os
 import re
+import bs4
+import sys
 import time
+import numpy
+import random
+import Bio.PDB
+import argparse
+import requests
 import datetime
 import subprocess
-import random
-import requests
 import urllib.request
-import bs4
-import Bio.PDB
 from Bio import pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
@@ -33,7 +59,7 @@ print(Green + '\n  ██╗   ██╗ █████╗ ██╗  ██╗
 print(Purple + '  ╔═╗┬ ┬┌┬┐┌─┐  ╔╦╗┌─┐┌─┐┬┌─┐┌┐┌  ╔═╗  ╦  ╦┌─┐┌─┐┌─┐┬┌┐┌┌─┐\n  ╠═╣│ │ │ │ │   ║║├┤ └─┐││ ┬│││  ╠═╣  ╚╗╔╝├─┤│  │  ││││├┤ \n  ╩ ╩└─┘ ┴ └─┘  ═╩╝└─┘└─┘┴└─┘┘└┘  ╩ ╩   ╚╝ ┴ ┴└─┘└─┘┴┘└┘└─┘' + Cancel)
 print(Yellow + 'Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)' + Cancel)
 print(Cyan + '--------------------------------------------------------------' + Cancel)
-#--------------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 #The Functions
 
 #1 - Extract Motif
@@ -117,22 +143,22 @@ def Graft(receptor, motif, scaffold):
 	#Setup grafting mover
 	mover.init_parameters(receptor, motif, 1.0, 2, 5, '0:0', '0:0', 'ALA', hotspots, True, False, True, False, False, True, False)
 	'''
-	context_structure				= 'receptor.pdb'
-	motif_structure					= 'motif.pdb'
-	RMSD_tolerance					= '2.0'
-	NC_points_RMSD_tolerance			= '2'
-	clash_score_cutoff				= '5'
-	combinatory_fragment_size_delta			= '0:0'
-	max_fragment_replacement_size_delta		= '0:0'
-	clash_test_residue				= 'ALA'
-	hotspots					= '1:2:3:4:5:6:7:8:9:10'
-	full_motif_bb_alignment				= 'True'
+	context_structure							= 'receptor.pdb'
+	motif_structure								= 'motif.pdb'
+	RMSD_tolerance								= '2.0'
+	NC_points_RMSD_tolerance					= '2'
+	clash_score_cutoff							= '5'
+	combinatory_fragment_size_delta				= '0:0'
+	max_fragment_replacement_size_delta			= '0:0'
+	clash_test_residue							= 'ALA'
+	hotspots									= '1:2:3:4:5:6:7:8:9:10'
+	full_motif_bb_alignment						= 'True'
 	allow_independent_alignment_per_fragment	= 'False'
-	graft_only_hotspots_by_replacement		= 'True'
+	graft_only_hotspots_by_replacement			= 'True'
 	only_allow_if_N_point_match_aa_identity		= 'False'
 	only_allow_if_C_point_match_aa_identity		= 'Flase'
-	revert_graft_to_native_sequence			= 'True'
-	allow_repeat_same_graft_output			= 'False'
+	revert_graft_to_native_sequence				= 'True'
+	allow_repeat_same_graft_output				= 'False'
 	'''
 	mover.apply(scaffold)
 	print(scorefxn(scaffold))
@@ -159,7 +185,7 @@ def Graft(receptor, motif, scaffold):
 		count += 1																											#Sequencially number atoms
 		AA1 = line[23:27]																									#Sequencially number residues
 		if not AA1 == AA2:
-			num += 1			
+			num += 1
 		final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
 		AA2 = AA1
 		thenewfile.write(final_line)																						#Write to new file called motif.pdb
@@ -775,7 +801,7 @@ class RosettaDesign():
 		RosettaDesign.BLAST(self, sys.argv[2], 'structure.pdb')
 		RosettaDesign.Layers(self, 'structure.pdb')
 
-	#5.7 - Preforms flxbb RosettaDesign for the whole protein except the motif
+	#5.7 - Preforms fixbb RosettaDesign for the whole protein except the motif
 	def motif_fixbb(self, filename, Motif_From, Motif_To, relax_iters, design_iters):
 		'''
 		Applies RosettaDesign with a fixed back bone to 
@@ -844,7 +870,7 @@ class RosettaDesign():
 		print('BLAST result, comparing the original structure to the designed structure:')
 		RosettaDesign.BLAST(self, filename, 'structure.pdb')
 
-	#5.8 - Preforms fixbb RosettaDesign for the whole protein except the motif
+	#5.8 - Preforms flxbb RosettaDesign for the whole protein except the motif
 	def motif_flxbb(self, filename, Motif_From, Motif_To, relax_iters, design_iters):
 		'''
 		Applies RosettaDesign with a flexible back bone to
@@ -961,7 +987,7 @@ def Fragments(filename, username):
 			break
 		else:
 			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', status)
-			time.sleep(1800)
+			time.sleep(900)
 			continue
 	#Download
 	sequence = pose.sequence()
@@ -1068,11 +1094,312 @@ def Fragments(filename, username):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 
-#7 - Fold From Loop
-def FFL(filename):
+#7 - Scaffold Searching
+def ScaffoldSearch(Protein, RecChain, Chain, Motif_From, Motif_To, Directory):
+	'''
+	This script searches a scaffold database for possible structures with
+	successful grafting sites
+	'''
+	hotspots = Motif(Protein, Chain, Motif_From, Motif_To)
+	Receptor(Protein, RecChain)
+	os.mkdir('Scaffolds')
+	current = os.getcwd()
+	database = os.listdir(Directory)
+	os.chdir(Directory)
+	print('\x1b[33m' + 'Motif Grafting' + '\x1b[0m')
+	for scaffold in database:
+		try:
+			MotifGraft('../receptor.pdb', '../motif.pdb', scaffold, 1.0)
+			os.system('cp {} ../Scaffolds'.format(scaffold))
+		except:
+			continue
+	os.remove('../receptor.pdb')
+	os.remove('../motif.pdb')
+
+#8 - Get protein and motif together for simple vaccine design protocol
+def Get(protein, chain, motif):
+	'''
+	Get a protein and isolates the desired chain Generates the 
+	original.pdb file
+	'''
+	# A - Get Structure
+	pose = pose_from_rcsb(protein)
+	# B - Clean Structure
+	FirstAA = int(pose.pdb_info().pose2pdb(1).split()[0]) - 1
+	TheFile = open('{}.clean.pdb'.format(protein), 'r')
+	for line in TheFile:
+		try:
+			if line.split()[4] == chain:
+				NewFile = open('temp.pdb', 'a')
+				NewFile.write(line)
+				NewFile.close()
+		except:
+			pass
+	os.remove('{}.clean.pdb'.format(protein))
+	os.remove('{}.pdb'.format(protein))
+	pdb = open('temp.pdb', 'r')
+	NewFile = open('original.pdb', 'w')
+	count = 0
+	num = 0
+	AA2 = None
+	for line in pdb:
+		if not line.startswith('ATOM'):
+			continue
+		else:
+			count += 1
+			AA1 = line[23:27]
+			if not AA1 == AA2:
+				num += 1
+			final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]
+			AA2 = AA1
+			NewFile.write(final_line)
+	NewFile.close()
+	os.remove('temp.pdb')
+	NewMotif = [numpy.absolute(AA - FirstAA) for  AA in motif]
+	return(NewMotif)
+
+#9 - Simple RosettaDesign
+def Simplefixbb(filename, motif, relax_iters, design_iters):
+	'''
+	Performs the RosettaDesign protocol to change a structure's
+	amino acid sequence while maintaining a fixed backbone.
+	Generates the structure.pdb file
+	'''
+	#A - Relax original structure
 	pose = pose_from_pdb(filename)
-	pass
-#--------------------------------------------------------------------------------------------------------------------------------------
+	chain = pose.pdb_info().chain(1)
+	scorefxn = get_fa_scorefxn()
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	Rscore_before = scorefxn(pose)
+	Rpose_work = Pose()
+	Rpose_lowest = Pose()
+	Rscores = []
+	Rscores.append(Rscore_before)
+	for nstruct in range(relax_iters):
+		Rpose_work.assign(pose)
+		relax.apply(Rpose_work)
+		Rscore_after = scorefxn(Rpose_work)
+		Rscores.append(Rscore_after)
+		if Rscore_after < Rscore_before:
+			Rscore_before = Rscore_after
+			Rpose_lowest.assign(Rpose_work)
+		else:
+			continue
+	pose.assign(Rpose_lowest)
+	RFinalScore = scorefxn(pose)
+	#B - Perform fixbb RosettaDesign without the motif residues
+	packtask = standard_packer_task(pose)
+	for aa in motif:
+		packtask.temporarily_set_pack_residue(aa, False)
+	packtask = standard_packer_task(pose)
+	pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , packtask)
+	Dscore_before = 0
+	Dpose_work = Pose()
+	Dpose_lowest = Pose()
+	Dscores = []
+	Dscores.append(Dscore_before)
+	for nstruct in range(design_iters):
+		Dpose_work.assign(pose)
+		pack.apply(Dpose_work)
+		Dscore_after = scorefxn(Dpose_work)
+		Dscores.append(Dscore_after)
+		if Dscore_after < Dscore_before:
+			Dscore_before = Dscore_after
+			Dpose_lowest.assign(Dpose_work)
+		else:
+			continue
+	pose.assign(Dpose_lowest)
+	DFinalScore = scorefxn(pose)
+	#C - Output Result
+	pose.dump_pdb('structure.pdb')
+	#D - Print report
+	print('==================== Result Report ====================')
+	print('Relax Scores:\n', Rscores)
+	print('Chosen Lowest Score:', RFinalScore, '\n')
+	print('Design Scores:\n', Dscores)
+	print('Chosen Lowest Score:', DFinalScore, '\n')
+	print('BLAST result, comparing the original structure to the designed structure:')
+	RD = RosettaDesign()
+	RD.BLAST(filename, 'structure.pdb')
+
+#10 - Fold From Loop
+def FFL(Motif, Scaffold, Motif_From, Motif_To, username):
+	'''
+	Performs the Fold From Loops protocol
+	'''
+#	# Get fragments of grafted scaffold
+#	pose = pose_from_pdb(Scaffold)
+#	sequence = pose.sequence()
+#	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
+#	payload = {
+#		'UserName':username,
+#		'Email':'',
+#		'Notes':'structure',
+#		'Sequence':sequence,
+#		'Fasta':'',
+#		'Code':'',
+#		'ChemicalShifts':'',
+#		'NoeConstraints':'',
+#		'DipolarConstraints':'',
+#		'type':'submit'}
+#	session = requests.session()
+#	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload, files=dict(foo='bar'))		
+#	for line in response:
+#		line = line.decode()
+#		if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line):
+#			JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line)
+#	JobURL = 'http://www.robetta.org/' + JobID[0]
+#	ID = JobID[0].split('=')
+#	print('Job ID: ' + str(ID[1]))
+#	while True:
+#		Job = urllib.request.urlopen(JobURL)
+#		jobdata = bs4.BeautifulSoup(Job, 'lxml')
+#		status = jobdata.find('td', string='Status: ').find_next().text
+#		if status == 'Complete':
+#			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', status)
+#			break
+#		else:
+#			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', status)
+#			time.sleep(900)
+#			continue
+#	sequence = pose.sequence()
+#	fasta = open('structure.fasta', 'w')
+#	fasta.write(sequence)
+#	fasta.close()
+#	time.sleep(1)
+#	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
+#	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
+#	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
+#	os.rename('aat000_03_05.200_v1_3', 'frags.200.3mers')
+#	os.rename('aat000_09_05.200_v1_3', 'frags.200.9mers')
+#	os.rename('t000_.psipred_ss2', 'pre.psipred.ss2')
+
+
+
+	print('FFL not available in PyRosetta yet')
+
+
+
+
+#	RESIDUE_SELECTORS
+	MOTIF = pyrosetta.rosetta.core.pack.task.operation.ResiduePDBInfoHasLabel('MOTIF')
+	TEMPLATE = pyrosetta.rosetta.core.pack.task.operation.ResiduePDBInfoHasLabel('TEMPLATE')
+	CONTEXT = pyrosetta.rosetta.core.pack.task.operation.ResiduePDBInfoHasLabel('CONTEXT')
+	FLEXIBLE = pyrosetta.rosetta.core.pack.task.operation.ResiduePDBInfoHasLabel('FLEXIBLE')
+	HOTSPOT = pyrosetta.rosetta.core.pack.task.operation.ResiduePDBInfoHasLabel('HOTSPOT')
+	COLDSPOT = pyrosetta.rosetta.core.pack.task.operation.ResiduePDBInfoHasLabel('COLDSPOT')
+"""
+<ResiduePDBInfoHasLabel name="MOTIF"     property="MOTIF" />
+<Not                    name="!MOTIF"    selector="MOTIF" />
+<ResiduePDBInfoHasLabel name="TEMPLATE"  property="TEMPLATE" />
+<Not                    name="!TEMPLATE" selector="TEMPLATE" />
+<ResiduePDBInfoHasLabel name="CONTEXT"   property="CONTEXT" />
+<Not                    name="!CONTEXT"  selector="CONTEXT" />
+<ResiduePDBInfoHasLabel name="FLEXIBLE"  property="FLEXIBLE" />
+<Not                    name="!FLEXIBLE" selector="FLEXIBLE" />
+<ResiduePDBInfoHasLabel name="HOTSPOT"   property="HOTSPOT" />
+<Not                    name="!HOTSPOT"  selector="HOTSPOT" />
+<ResiduePDBInfoHasLabel name="COLDSPOT"  property="COLDSPOT" />
+<Not                    name="!COLDSPOT" selector="COLDSPOT" />
+
+<And name="FLEXIBLE_AND_MOTIF" selectors="FLEXIBLE,MOTIF" />
+<And name="COLDSPOT_AND_MOTIF" selectors="COLDSPOT,MOTIF" />
+<And name="HOTSPOT_AND_MOTIF"  selectors="HOTSPOT,MOTIF" />
+
+<Or name="COLDSPOT_OR_TEMPLATE"              selectors="COLDSPOT,TEMPLATE" />
+<Or name="FLEXIBLE_OR_TEMPLATE"              selectors="FLEXIBLE,TEMPLATE" />
+<Or name="COLDSPOT_OR_FLEXIBLE_OR_TEMPLATE"  selectors="COLDSPOT,FLEXIBLE,TEMPLATE" />
+<Or name="HOTSPOT_OR_CONTEXT"                selectors="HOTSPOT,CONTEXT" />
+<And name="HOTSPOT_OR_CONTEXT_AND_!FLEXIBLE" selectors="HOTSPOT_OR_CONTEXT,!FLEXIBLE" />
+<And name="FLEXIBLE_AND_!COLDSPOT"           selectors="FLEXIBLE,!COLDSPOT" />
+
+<ProteinResidueSelector name="PROTEIN" />
+<Not name="!PROTEIN" selector="PROTEIN" />
+"""
+
+
+
+#	RS = pyrosetta.rosetta.core.select.residue_selector.ResidueSelector()
+
+
+#	MOVE_MAP_FACTORIES
+#	MM = pyrosetta.rosetta.core.select.movemap.MoveMapFactory()
+#	MM.all_bb(False)
+#	MM.all_chi(False)
+#	MM.all_nu(False)
+#	MM.all_branches(False)
+#	MM.all_jumps(False)
+#	MM.add_bb_action()#<Backbone enable="true" residue_selector="FLEXIBLE_OR_TEMPLATE" />
+#	MM.add_chi_action()#<Chi enable="true" residue_selector="COLDSPOT_OR_FLEXIBLE_OR_TEMPLATE" />
+
+#	TASKOPERATIONS
+#	TASK = pyrosetta.rosetta.core.pack.task.operation.TaskOperation()
+
+#	FILTERS
+#RmsdFromResidueSelectorFilter
+
+#	MOVERS
+#SavePoseMover
+#DeleteRegionMover
+#StructFragmentMover
+#AddConstraints
+#ClearConstraintsMover
+
+#	FFL = pyrosetta.rosetta.protocols.fold_from_loops.NubInitioMover()
+#fragments_id()
+#template_motif_selector()
+#fullatom_scorefxn()
+#dump_centroid()
+
+
+
+#loop.input
+
+
+#-s {PATH}/scaffold.pdb
+#-in:file:frag3 {PATH}/aat000_03_05.200_v1_3
+#-in:file:frag9 {PATH}/aat000_09_05.200_v1_3
+#-in:file:psipred_ss2 {PATH}/t000_.psipred_ss2
+
+#-loops::loop_file {PATH}/input.loop
+#-loops::frag_sizes 9 3 1
+
+#-abinitio::steal_3mers
+#-abinitio::steal_9mers
+
+#-fold_from_loops::add_relax_cycles 2
+#-fold_from_loops::swap_loops {PATH}/motif.pdb
+#-fold_from_loops::res_design_bs 1 6
+#-fold_from_loops::loop_mov_nterm 2
+#-fold_from_loops::loop_mov_cterm 2
+#-fold_from_loops::ca_rmsd_cutoff 1.5
+#-fold_from_loops::native_ca_cst
+#-fold_from_loops::ca_csts_dev 3.0
+
+
+# https://graylab.jhu.edu/Sergey/pdoc/PyRosetta-4.documentation.commits.MinSizeRel.python3.6.linux/pyrosetta.rosetta.core.pack.task.operation.html#pyrosetta.rosetta.core.pack.task.operation.ResidueHasProperty.get_xml_schema_attributes
+# https://github.com/jaumebonet/FoldFromLoopsTutorial
+
+
+
+
+#FFL('motif.pdb', 'grafted.pdb', 'ac.research')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#-------------------------------------------------------------------------------
 #List of all functions and their arguments
 '''
 1	-	Motif(Protein, Chain, Motif_from, Motif_to)
@@ -1085,16 +1412,8 @@ def FFL(filename):
 6.5	-	RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
 7	-	Fragments(pose)
 '''
-#--------------------------------------------------------------------------------------------------------------------------------------
-def protocol():
-	#User inputs
-	Protein		= sys.argv[1]
-	RecChain	= sys.argv[2]
-	Chain		= sys.argv[3]
-	Motif_from	= sys.argv[4]
-	Motif_to	= sys.argv[5]
-	Scaffold	= sys.argv[6]
-	UserName	= sys.argv[7]
+#-------------------------------------------------------------------------------
+def protocol(Protein, RecChain, Chain, Motif_from, Motif_to, Scaffold, UserName):
 	#1. Import scaffold
 	pose = pose_from_pdb(Scaffold)
 	#2. Isolate motif
@@ -1104,7 +1423,7 @@ def protocol():
 	#4. Graft motif onto scaffold
 	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
 	#5. Fold From Loop
-	#FFL('grafted.pdb')
+	FFL('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
 	#6. Sequence design the structure around the motif
 	RD = RosettaDesign()
 	RD.motif_fixbb('ffl.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
@@ -1112,4 +1431,46 @@ def protocol():
 	#7. Generate fragments and test their quality to predict the Abinitio folding simulation success
 	Fragments('structure.pdb', UserName)
 
-if __name__ == '__main__': protocol()
+parser = argparse.ArgumentParser(description='A script that autonomously designs a vaccine\nAuthored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)\nhttps://github.com/sarisabban/vexdesign')
+parser.add_argument('-s', '--scaffold',		nargs='+', metavar='', help='search for scaffolds')
+parser.add_argument('-p', '--protocol',		nargs='+', metavar='', help='Run full protocol')
+parser.add_argument('-m', '--motif',		nargs='+', metavar='', help='Isolate motif')
+parser.add_argument('-r', '--receptor',		nargs='+', metavar='', help='Isolate receptor')
+parser.add_argument('-g', '--graft',		nargs='+', metavar='', help='Graft motif onto scaffold')
+parser.add_argument('-f', '--ffl',			nargs='+', metavar='', help='Fold From Loop')
+parser.add_argument('-d', '--design',		nargs='+', metavar='', help='Sequence design the structure around the motif')
+parser.add_argument('-F', '--fragments',	nargs='+', metavar='', help='Generate and analyse fragments')
+parser.add_argument('-S', '--simple',		nargs='+', metavar='', help='Simple vaccine design')
+args = parser.parse_args()
+
+def main():
+	if args.scaffold:		# Search for scaffolds
+		ScaffoldSearch(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+	elif args.protocol:		# Run full protocol
+		protocol(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8])
+	elif args.motif:		# Isolate motif
+		Motif(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+		os.remove('{}.pdb'.format(sys.argv[2]))
+	elif args.receptor:		# Isolate receptor
+		os.system('wget http://www.rcsb.org/pdb/files/' + sys.argv[2] + '.pdb')
+		Receptor(sys.argv[2], sys.argv[3])
+	elif args.graft:		# Graft motif onto scaffold
+		pose = pose_from_pdb(sys.argv[4])
+		MotifPosition = Graft(sys.argv[2], sys.argv[3], pose)
+		print(Cyan + 'Grafted between positions: {} and {}'.format(MotifPosition[0], MotifPosition[1]) + Cancel)
+	elif args.ffl:			# Fold From Loop
+		FFL(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
+	elif args.design:		# Sequence design the structure around the motif
+		RD = RosettaDesign()
+		RD.motif_fixbb(sys.argv[2], sys.argv[3], sys.argv[4], 50, 100)
+		RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
+	elif args.fragments:	# Generate fragments
+		Fragments(sys.argv[2], sys.argv[3])
+	elif args.simple:		# Simple vaccine design
+		TheProtein = sys.argv[2]
+		TheChain = sys.argv[3]
+		TheMotif = list(map(int, sys.argv[4:]))
+		Motif = Get(TheProtein, TheChain, TheMotif)
+		Simplefixbb('original.pdb', Motif, 50, 100)
+
+if __name__ == '__main__': main()
