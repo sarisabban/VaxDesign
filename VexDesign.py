@@ -1423,10 +1423,10 @@ def protocol(Protein, RecChain, Chain, Motif_from, Motif_to, Scaffold, UserName)
 	#4. Graft motif onto scaffold
 	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
 	#5. Fold From Loop
-	FFL('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
+	#FFL('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
 	#6. Sequence design the structure around the motif
 	RD = RosettaDesign()
-	RD.motif_fixbb('ffl.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
+	RD.motif_fixbb('motif.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
 	RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
 	#7. Generate fragments and test their quality to predict the Abinitio folding simulation success
 	Fragments('structure.pdb', UserName)
