@@ -1,5 +1,5 @@
 # VexDesign
-Scripts that autonomously designs a vaccine. Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com).
+Scripts that computationally designs a vaccine. Authored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com).
 
 ## Requirements
 1. Download this script:
