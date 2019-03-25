@@ -128,7 +128,7 @@ def Relax(pose):
 def Graft(receptor, motif, scaffold):
 	'''
 	Grafts a motif onto a protein scaffold structure
-	Generates structure.pdb and returns a tuple [0] is the
+	Generates grafted.pdb and returns a tuple [0] is the
 	residue number where the motif starts and [1] where it ends
 	'''
 	scorefxn = get_fa_scorefxn()
@@ -718,7 +718,7 @@ class RosettaDesign():
 		'''
 		This function takes the list of amino acids from the Layers()
 		function that are in the wrong layer and mutates the structure by
-		changing these position intothe preferred amino acids for the
+		changing these positions into the preferred amino acids for the
 		respective layer and secondary structure. Then refines the
 		structure in an attempt to generate an ideal protein structure.
 		Generates the refined.pdb file.
@@ -1426,8 +1426,9 @@ def protocol(Protein, RecChain, Chain, Motif_from, Motif_to, Scaffold, UserName)
 	#FFL('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
 	#6. Sequence design the structure around the motif
 	RD = RosettaDesign()
-	RD.motif_fixbb('motif.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
+	RD.motif_fixbb('grafted.pdb', MotifPosition[0], MotifPosition[1], 50, 100)
 	RD.Refine('fixbb.pdb', RD.Layers('fixbb.pdb'), 50)
+	os.system('mv refine.pdb structure.pdb')
 	#7. Generate fragments and test their quality to predict the Abinitio folding simulation success
 	Fragments('structure.pdb', UserName)
 
