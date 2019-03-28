@@ -29,6 +29,7 @@ import re
 import bs4
 import sys
 import time
+import glob
 import numpy
 import random
 import Bio.PDB
@@ -527,8 +528,7 @@ class RosettaDesign(object):
 				score = score2
 				name = line.get('decoy')
 		os.system('mv {} structure.pdb'.format(name))
-		try:	os.system('rm fixbb_*')
-		except:	os.system('rm fixbb_*')
+		for f in glob.glob('f[il]xbb_*'): os.remove(f)
 	def fixbb(self):
 		'''
 		Performs the RosettaDesign protocol to change a structure's
