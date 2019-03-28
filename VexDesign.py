@@ -723,8 +723,8 @@ def main():
 	elif args.ffl:			# Fold From Loop
 		FFL(			sys.argv[2],		# Motif PDB file name
 						sys.argv[3],		# Scaffold PDB file name
-						sys.argv[4],		# Motif from
-						sys.argv[5],		# Motif to
+						sys.argv[4],		# Motif on scaffold from
+						sys.argv[5],		# Motif on scaffold to
 						sys.argv[6])		# Robetta server username
 	elif args.design:		# Sequence design the structure around the motif
 		if sys.argv[2] == 'fixbb':			# Choice
