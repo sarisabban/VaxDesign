@@ -513,8 +513,7 @@ class RosettaDesign(object):
 	def __del__(self):
 		''' Remove the resfile '''
 		os.remove('resfile')
-		try:	os.remove('fixbb.fasc')
-		except:	os.remove('flxbb.fasc')
+		for f in glob.glob('f[il]xbb.fasc'): os.remove(f)
 	def choose(self):
 		''' Choose the lowest scoring structure '''
 		try:	scorefile = open('fixbb.fasc', 'r')
