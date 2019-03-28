@@ -79,7 +79,7 @@ Example:
 
 4. Generate a vaccine using the following command:
 
-`python3 VexDesign.py -p PDBID RCHAIN CHAIN FROM TO SCAFFOLD USERNAME`
+`python3 VexDesign.py -p PDBID RCHAIN CHAIN FROM TO SCAFFOLD CHOICE USERNAME`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
 * RCHAIN = The chain where the receptor resides within the protein .pdb file
@@ -87,11 +87,12 @@ Example:
 * FROM = The start of the target site
 * TO = The end of the target site
 * SCAFFOLD = The protein scaffold structure generated from the Scaffold.py script
+* CHOICE = Choose between fixbb ot flxbb RosettaDesign
 * USERNAME = The [Robetta server](http://robetta.org/) username to generate and download the *Abinitio* fragment files and the PSIPRED secondary structure prediction file
 
 Example:
 
-`python3 VexDesign.py -p 2y7q A B 420 429 scaffold.pdb`
+`python3 VexDesign.py -p 2y7q A B 420 429 scaffold.pdb fixbb siwa2`
 
 Calculation time is about 72 hours on a normal desktop computer. Access to the internet is a requirement since the VexDesign.py script will be sending and retrieving data from some servers.
 
