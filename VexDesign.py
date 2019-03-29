@@ -625,6 +625,7 @@ class RosettaDesign(object):
 		# Remove motif residues from resfile
 		resfile = open('resfile', 'r')
 		resfile2 = open('resfile2', 'a')
+		resfile2.write('NATRO\nSTART\n')
 		next(resfile)
 		next(resfile)
 		for res in resfile:
