@@ -510,6 +510,7 @@ class RosettaDesign(object):
 				line = '{} A PIKAA AVILFWM\n'.format(n)
 				resfile.write(line)
 		resfile.close()
+		self.SASA = sasalist
 	def __del__(self):
 		''' Remove the resfile '''
 		os.remove('resfile')
@@ -658,11 +659,43 @@ class RosettaDesign(object):
 			job.output_decoy(pose)
 		self.choose()
 		os.remove('resfile2')
+	def surf(self, motif_list):
+		'''
+		Applies RosettaDesign with a fixed back bone to change only the
+		structure's surface amino acids except for the desired motif.
+		'''
+		pose = pose_from_pdb(self.filename)
+		starting_pose = Pose()
+		starting_pose.assign(pose)
+		scorefxn = get_fa_scorefxn()
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		packtask = standard_packer_task(pose)
+		pyrosetta.rosetta.core.pack.task.parse_resfile(pose,packtask,'resfile')
+		#Identify non-surface and motif residues
+		Motif = motif_list
+		for s in self.SASA:
+			if s[3] != 'S':
+				Motif.append(s[0])
+		for aa in Motif:
+			packtask.temporarily_set_pack_residue(aa, False)
+		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, packtask)
+		fixbb = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, packtask, 10)
+		job = PyJobDistributor('fixbb', 100, scorefxn)
+		job.native_pose = starting_pose
+		while not job.job_complete:
+			pose.assign(starting_pose)
+			relax.apply(pose)
+			fixbb.apply(pose)
+			relax.apply(pose)
+			job.output_decoy(pose)
+		self.choose()
+
 def FFL(Motif, Scaffold, Motif_From, Motif_To, username):
 	'''
 	Performs the Fold From Loops protocol
 	'''
-	print('FFL is not yet available in PyRosetta')
+	print('FFL is not yet fully available in PyRosetta')
 
 def protocol(Protein,RChain,Chain,Motif_from,Motif_to,Scaffold,Choice,UserName):
 	#1. Import scaffold
@@ -686,14 +719,14 @@ def protocol(Protein,RChain,Chain,Motif_from,Motif_to,Scaffold,Choice,UserName):
 	Fragments('structure.pdb', UserName)
 
 def main():
-	if args.scaffold:		# Search for scaffolds
+	if args.scaffold:	# Search for scaffolds
 		ScaffoldSearch(	sys.argv[2],		# PDB ID
 						sys.argv[3],		# Receptor chain
 						sys.argv[4],		# Motif chain
 						sys.argv[5],		# Motif from
 						sys.argv[6],		# Motif to
 						sys.argv[7])		# Directory of scaffolds
-	elif args.protocol:		# Run full protocol
+	elif args.protocol:	# Run full protocol
 		protocol(		sys.argv[2],		# PDB ID
 						sys.argv[3],		# Receptor chain
 						sys.argv[4],		# Motif chain
@@ -702,31 +735,31 @@ def main():
 						sys.argv[7],		# Scaffold PDB file name
 						sys.argv[8],		# RosettaDesign choice
 						sys.argv[9])		# Robetta server username
-	elif args.motif:		# Isolate motif
+	elif args.motif:	# Isolate motif
 		Motif(			sys.argv[2],		# PDB ID
 						sys.argv[3],		# Motif chain
 						sys.argv[4],		# Motif from
 						sys.argv[5])		# Motif to
 		os.remove('{}.pdb'.format(sys.argv[2]))
-	elif args.receptor:		# Isolate receptor
+	elif args.receptor:	# Isolate receptor
 		RCSB = 'http://www.rcsb.org/pdb/files'
 		os.system('wget {}/{}.pdb'.format(RCSB, sys.argv[2]))
 		Receptor(		sys.argv[2],		# PDB ID
 						sys.argv[3])		# Receptor chain
-	elif args.graft:		# Graft motif onto scaffold
+	elif args.graft:	# Graft motif onto scaffold
 		pose = pose_from_pdb(sys.argv[4])	# Scaffold PDB file name
 		MotifPosition = Graft(sys.argv[2],	# Receptor PDB file name
 							sys.argv[3],	# Motif PDB file name
 							pose)
 		print('Grafted between positions: {} and {}'.format(MotifPosition[0],
 															MotifPosition[1]))
-	elif args.ffl:			# Fold From Loop
+	elif args.ffl:		# Fold From Loop
 		FFL(			sys.argv[2],		# Motif PDB file name
 						sys.argv[3],		# Scaffold PDB file name
 						sys.argv[4],		# Motif on scaffold from
 						sys.argv[5],		# Motif on scaffold to
 						sys.argv[6])		# Robetta server username
-	elif args.design:		# Sequence design the structure around the motif
+	elif args.design:	# Sequence design the structure around the motif
 		if sys.argv[2] == 'fixbb':			# Choice
 			RD = RosettaDesign(	sys.argv[3])# Scaffold PDB file name
 			RD.fixbb_motif(		sys.argv[4],# Motif on scaffold from
@@ -735,13 +768,11 @@ def main():
 			RD = RosettaDesign(	sys.argv[3])# Scaffold PDB file name
 			RD.flxbb_motif(		sys.argv[4],# Motif on scaffold from
 								sys.argv[5])# Motif on scaffold to
-	elif args.fragments:	# Generate fragments
+		elif sys.argv[2] == 'surface':		# Choice
+			RD = RosettaDesign(	sys.argv[3])# Scaffold PDB file name
+			RD.surf(			sys.argv[4:])# Motif amino acid list
+	elif args.fragments:# Generate fragments
 		Fragments(		sys.argv[2],		# Filename
 						sys.argv[3])		# Username
 
 if __name__ == '__main__': main()
-
-#2y7q A B 420 429
-#Graft()
-#ScaffoldSearch()
-#protocol()

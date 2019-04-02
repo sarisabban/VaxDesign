@@ -125,6 +125,10 @@ In this case the FROM and TO are the positions of the motif on the grafted struc
 
 In this case the FROM and TO are the positions of the motif on the grafted structure and not the original protien structure
 
+You can also choose to RosettaDesign only the suface of the structure (without changing your motif)
+
+`python3 VexDesign.py -d CHOICE grafted.pdb MOTIF_AA_LIST` Example `python3 VexDesign.py -d surface grafted.pdb 8 12 15 17 23 24 26 28`
+
 * Generate fragments
 
 `python3 VexDesign.py -F structure.pdb USERNAME` Example `python3 VexDesign.py -F structure.pdb acresearch`
