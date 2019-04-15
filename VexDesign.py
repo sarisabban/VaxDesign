@@ -114,22 +114,25 @@ def Graft(receptor, motif, scaffold):
 	Generates grafted.pdb and returns a tuple [0] is the
 	residue number where the motif starts and [1] where it ends
 	'''
-	scorefxn = get_fa_scorefxn()
-	mover = pyrosetta.rosetta.protocols.motif_grafting.movers.MotifGraftMover()
 	#Setup motif hotspots
 	motifpose = pose_from_pdb(motif)
 	spots = list()
 	for resi in range(motifpose.total_residue()):
 		spots.append(str(resi+1))
 	hotspots = ':'.join(spots)
+	#Setup score function
+	scorefxn = get_fa_scorefxn()
+	#Setup filters
+	FLTR = rosetta.protocols.simple_filters.PackStatFilter()
 	#Setup grafting mover
-	mover.init_parameters(
+	graft = pyrosetta.rosetta.protocols.motif_grafting.movers.MotifGraftMover()
+	graft.init_parameters(
 						receptor, 	# context_structure
 						motif, 		# motif_structure
 						1.0, 		# RMSD_tolerance
 						2.0, 		# NC_points_RMSD_tolerance
 						5, 			# clash_score_cutoff
-#						1, 			# min_fragment_size
+						1, 			# min_fragment_size
 						'0:0', 		# combinatory_fragment_size_delta
 						'0:0', 		# max_fragment_replacement_size_delta
 						'ALA', 		# clash_test_residue
@@ -140,10 +143,10 @@ def Graft(receptor, motif, scaffold):
 						False, 		# only_allow_if_N_point_match_aa_identity
 						False, 		# only_allow_if_C_point_match_aa_identity
 						True, 		# revert_graft_to_native_sequence
-						False)#,	# allow_repeat_same_graft_output
-#						1.0,		# output_cluster_tolerance
-#						GEO)		# output_filter
-	mover.apply(scaffold)
+						False,		# allow_repeat_same_graft_output
+						1.0,		# output_cluster_tolerance
+						FLTR)		# output_filter
+	graft.apply(scaffold)
 	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
 	relax.set_scorefxn(scorefxn)
 	relax.apply(scaffold)
