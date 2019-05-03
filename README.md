@@ -111,7 +111,7 @@ You can run each step separatly, use the following commands to run each step:
 
 * Graft motif onto the scaffold structure
 
-`python3 VexDesign.py -g receptor.pdb motif.pdb scaffold.pdb`
+`python3 VexDesign.py -g RECEPTOR.pdb MOTIF.pdb SCAFFOLD.pdb` Example `python3 VexDesign.py -g receptor.pdb motif.pdb scaffold.pdb`
 
 * Run the Fold From Loop protocol
 

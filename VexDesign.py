@@ -40,8 +40,9 @@ import subprocess
 import urllib.request
 from pyrosetta import *
 from pyrosetta.toolbox import *
-print('\x1b[32m\n  ██╗   ██╗ █████╗ ██╗  ██╗\n  ██║   ██║██╔══██╗╚██╗██╔╝\n  ██║   ██║███████║ ╚███╔╝ \n  ╚██╗ ██╔╝██╔══██║ ██╔██╗ \n   ╚████╔╝ ██║  ██║██╔╝ ██╗\n    ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═╝\n                           \n  ██████╗ ███████╗███████╗██╗ ██████╗ ███╗   ██╗\n  ██╔══██╗██╔════╝██╔════╝██║██╔════╝ ████╗  ██║\n  ██║  ██║█████╗  ███████╗██║██║  ███╗██╔██╗ ██║\n  ██║  ██║██╔══╝  ╚════██║██║██║   ██║██║╚██╗██║\n  ██████╔╝███████╗███████║██║╚██████╔╝██║ ╚████║\n  ╚═════╝ ╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝\n                                                \x1b[0m\n\x1b[35m  ╔═╗┬ ┬┌┬┐┌─┐  ╔╦╗┌─┐┌─┐┬┌─┐┌┐┌  ╔═╗  ╦  ╦┌─┐┌─┐┌─┐┬┌┐┌┌─┐\n  ╠═╣│ │ │ │ │   ║║├┤ └─┐││ ┬│││  ╠═╣  ╚╗╔╝├─┤│  │  ││││├┤ \n  ╩ ╩└─┘ ┴ └─┘  ═╩╝└─┘└─┘┴└─┘┘└┘  ╩ ╩   ╚╝ ┴ ┴└─┘└─┘┴┘└┘└─┘\x1b[0m\n\x1b[33mAuthored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)\x1b[0m\n\x1b[36m--------------------------------------------------------------\x1b[0m')
-init(-out:level 0)
+print('\x1b[32m\n  ██╗   ██╗ █████╗ ██╗  ██╗\n  ██║   ██║██╔══██╗╚██╗██╔╝\n  ██║   ██║███████║ ╚███╔╝ \n  ╚██╗ ██╔╝██╔══██║ ██╔██╗ \n   ╚████╔╝ ██║  ██║██╔╝ ██╗\n    ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═╝\n                           \n  ██████╗ ███████╗███████╗██╗ ██████╗ ███╗   ██╗\n  ██╔══██╗██╔════╝██╔════╝██║██╔════╝ ████╗  ██║\n  ██║  ██║█████╗  ███████╗██║██║  ███╗██╔██╗ ██║\n  ██║  ██║██╔══╝  ╚════██║██║██║   ██║██║╚██╗██║\n  ██████╔╝███████╗███████║██║╚██████╔╝██║ ╚████║\n  ╚═════╝ ╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝\n                                                \x1b[0m\n\x1b[35m  ╔═╗┬ ┬┌┬┐┌─┐  ╔╦╗┌─┐┌─┐┬┌─┐┌┐┌  ╔═╗  ╦  ╦┌─┐┌─┐┌─┐┬┌┐┌┌─┐\n  ╠═╣│ │ │ │ │   ║║├┤ └─┐││ ┬│││  ╠═╣  ╚╗╔╝├─┤│  │  ││││├┤ \n  ╩ ╩└─┘ ┴ └─┘  ═╩╝└─┘└─┘┴└─┘┘└┘  ╩ ╩   ╚╝ ┴ ┴└─┘└─┘┴┘└┘└─┘\x1b[0m\n\x1b[33mAuthored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)\nRepository is found at https://sarisabban.github.io/VexDesign/\x1b[0m\n\x1b[36m--------------------------------------------------------------\x1b[0m')
+init('-out:level 0')
+print('\x1b[36m--------------------------------------------------------------\x1b[0m')
 
 parser = argparse.ArgumentParser(description='A script that autonomously designs a vaccine\nAuthored by Sari Sabban on 31-May-2017 (sari.sabban@gmail.com)\nhttps://sarisabban.github.io/VexDesign/')
 parser.add_argument('-s', '--scaffold',		nargs='+', metavar='', help='search for scaffolds')
@@ -60,7 +61,7 @@ def Motif(PDB_ID, Chain, Motif_From, Motif_To):
 	specific user defined motif from it Generates the motif.pdb file
 	'''
 	#Get the protein
-	os.system('wget http://www.rcsb.org/pdb/files/{}.pdb'.format(PDB_ID))
+	os.system('wget -q http://www.rcsb.org/pdb/files/{}.pdb'.format(PDB_ID))
 	pdb = open('{}.pdb'.format(PDB_ID), 'r')
 	#Isolate the motif
 	Motif = open('motif.pdb', 'w')
@@ -245,9 +246,9 @@ def Fragments(filename, username):
 	fasta.write(sequence)
 	fasta.close()
 	time.sleep(1)
-	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_03_05.200_v1_3')
-	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_09_05.200_v1_3')
-	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/t000_.psipred_ss2')
+	os.system('wget -q http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_03_05.200_v1_3')
+	os.system('wget -q http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_09_05.200_v1_3')
+	os.system('wget -q http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/t000_.psipred_ss2')
 	os.rename('aat000_03_05.200_v1_3', 'frags.200.3mers')
 	os.rename('aat000_09_05.200_v1_3', 'frags.200.9mers')
 	os.rename('t000_.psipred_ss2', 'pre.psipred.ss2')
@@ -662,34 +663,46 @@ class RosettaDesign(object):
 		self.choose()
 
 def FFL(Motif, Scaffold, Motif_From, Motif_To, username):
-	'''
-	Performs the Fold From Loops protocol
-	'''
+	''' Performs the Fold From Loops protocol '''
 	print('FFL is not yet fully available in PyRosetta')
 
-def protocol(Protein,RChain,Chain,Motif_from,Motif_to,Scaffold,Choice,UserName):
+def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, UserName):
+	#0. Make directory
+	os.makedirs('Vaccine', exist_ok=True)
+	os.chdir('Vaccine')
+	print('\x1b[32m[+] Project directory created\x1b[0m')
 	#1. Import scaffold
+	os.system('mv ../{} .'.format(Scaffold))
 	pose = pose_from_pdb(Scaffold)
+	print('\x1b[32m[+] Imported scaffold\x1b[0m')
 	#2. Isolate motif
 	Motif(Protein, Chain, Motif_from, Motif_to)
+	print('\x1b[32m[+] Isolated motif\x1b[0m')
 	#3. Isolate receptor
 	Receptor(Protein, RChain)
+	print('\x1b[32m[+] Isolated receptor\x1b[0m')
 	#4. Graft motif onto scaffold
 	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
+	print('\x1b[32m[+] Grafted motif onto scaffold\x1b[0m')
 	#5. Fold From Loop
 	#FFL('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
+	#print('\x1b[32m[+] Fold From Loop completed\x1b[0m')
 	#6. RosettaDesign the structure around the motif
 	if Choice == 'fixbb':
+		print('\x1b[32m[+] Fixbb designing\x1b[0m')
 		RD = RosettaDesign('grafted.pdb')
 		RD.fixbb_motif(MotifPosition[0], MotifPosition[1])
 	elif Choice == 'flxbb':
+		print('\x1b[32m[+] Flxbb designing\x1b[0m')
 		RD = RosettaDesign('grafted.pdb')
 		RD.flxbb_motif(MotifPosition[0], MotifPosition[1])
 	#7. Generate and analyse fragments
 	Fragments('structure.pdb', UserName)
+	print('\x1b[32m[+] Vaccine structure completed\x1b[0m')
 
 def main():
 	if args.scaffold:	# Search for scaffolds
+		print('\x1b[32m[+] Searching for scaffolds\x1b[0m')
 		ScaffoldSearch(	sys.argv[2],		# PDB ID
 						sys.argv[3],		# Receptor chain
 						sys.argv[4],		# Motif chain
@@ -711,38 +724,47 @@ def main():
 						sys.argv[4],		# Motif from
 						sys.argv[5])		# Motif to
 		os.remove('{}.pdb'.format(sys.argv[2]))
+		print('\x1b[32m[+] Motif isolated\x1b[0m')
 	elif args.receptor:	# Isolate receptor
 		RCSB = 'http://www.rcsb.org/pdb/files'
-		os.system('wget {}/{}.pdb'.format(RCSB, sys.argv[2]))
+		os.system('wget -q {}/{}.pdb'.format(RCSB, sys.argv[2]))
 		Receptor(		sys.argv[2],		# PDB ID
 						sys.argv[3])		# Receptor chain
+		print('\x1b[32m[+] Receptor isolated\x1b[0m')
 	elif args.graft:	# Graft motif onto scaffold
 		pose = pose_from_pdb(sys.argv[4])	# Scaffold PDB file name
 		MotifPosition = Graft(sys.argv[2],	# Receptor PDB file name
 							sys.argv[3],	# Motif PDB file name
 							pose)
-		print('Grafted between positions: {} and {}'.format(MotifPosition[0],
-															MotifPosition[1]))
+		print('[+] Grafted motif onto scaffold between positions: {} and {}'.format(MotifPosition[0], MotifPosition[1]))
 	elif args.ffl:		# Fold From Loop
 		FFL(			sys.argv[2],		# Motif PDB file name
 						sys.argv[3],		# Scaffold PDB file name
 						sys.argv[4],		# Motif on scaffold from
 						sys.argv[5],		# Motif on scaffold to
 						sys.argv[6])		# Robetta server username
+		#print('\x1b[32m[+] Fold From Loop completed\x1b[0m')
 	elif args.design:	# Sequence design the structure around the motif
 		if sys.argv[2] == 'fixbb':			# Choice
+			print('\x1b[32m[+] Fixbb designing\x1b[0m')
 			RD = RosettaDesign(	sys.argv[3])# Scaffold PDB file name
 			RD.fixbb_motif(		sys.argv[4],# Motif on scaffold from
 								sys.argv[5])# Motif on scaffold to
+			print('\x1b[32m[+] Design complete\x1b[0m')
 		elif sys.argv[2] == 'flxbb':		# Choice
+			print('\x1b[32m[+] Flxbb designing\x1b[0m')
 			RD = RosettaDesign(	sys.argv[3])# Scaffold PDB file name
 			RD.flxbb_motif(		sys.argv[4],# Motif on scaffold from
 								sys.argv[5])# Motif on scaffold to
+			print('\x1b[32m[+] Design complete\x1b[0m')
 		elif sys.argv[2] == 'surface':		# Choice
+			print('\x1b[32m[+] Surface designing\x1b[0m')
 			RD = RosettaDesign(	sys.argv[3])# Scaffold PDB file name
 			RD.surf(			sys.argv[4:])# Motif amino acid list
+			print('\x1b[32m[+] Design complete\x1b[0m')
 	elif args.fragments:# Generate fragments
 		Fragments(		sys.argv[2],		# Filename
 						sys.argv[3])		# Username
+		print('\x1b[32m[+] Fragments generated\x1b[0m')
 
 if __name__ == '__main__': main()
