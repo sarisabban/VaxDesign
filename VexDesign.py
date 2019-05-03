@@ -734,7 +734,7 @@ def main():
 		MotifPosition = Graft(sys.argv[2],	# Receptor PDB file name
 							sys.argv[3],	# Motif PDB file name
 							pose)
-		print('[+] Grafted motif onto scaffold between positions: {} and {}'.format(MotifPosition[0], MotifPosition[1]))
+		print('\x1b[32m[+] Grafted motif onto scaffold between positions: {} and {}\x1b[0m'.format(MotifPosition[0], MotifPosition[1]))
 	elif args.ffl:		# Fold From Loop
 		FFL(			sys.argv[2],		# Motif PDB file name
 						sys.argv[3],		# Scaffold PDB file name
