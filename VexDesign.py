@@ -197,15 +197,13 @@ def Graft(receptor, motif, scaffold):
 
 def Fragments(filename, username):
 	'''
-	Submits the pose to the Robetta server
-	(http://www.robetta.org) for fragment generation that are
-	used for the Abinitio folding simulation. Then measures the
-	RMSD for each fragment at each position and chooses the
-	lowest RMSD. Then averages out the lowest RMSDs. Then plots
-	the lowest RMSD fragment for each positon.
-	Generates the 3-mer file, the 9-mer file, the PsiPred file,
-	the RMSD vs Position PDF plot with the averaged fragment
-	RMSD printed in the plot
+	Submits the pose to the Robetta server (http://www.robetta.org) for
+	fragment generation that are used for the Abinitio folding simulation.
+	Then measures the RMSD for each fragment at each position and chooses
+	the lowest RMSD. Then averages out the lowest RMSDs. Then plots the
+	lowest RMSD fragment for each positon. Generates the 3-mer file, the
+	9-mer file, the PsiPred file, the RMSD vs Position PDF plot with the
+	averaged fragment RMSD printed in the plot
 	'''
 	pose = pose_from_pdb(filename)
 	sequence = pose.sequence()
