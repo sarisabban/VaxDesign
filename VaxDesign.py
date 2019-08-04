@@ -616,37 +616,37 @@ def FFL(Motif, Scaffold, Motif_From, Motif_To, username):
 	print('\x1b[31m[-] FFL is not yet fully available in PyRosetta\x1b[0m')
 
 def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, UserName):
-#	#0. Make directory
-#	os.makedirs('Vaccine', exist_ok=True)
-#	os.chdir('Vaccine')
-#	print('\x1b[32m[+] Project directory created\x1b[0m')
-#	#1. Import scaffold
-#	os.system('mv ../{} .'.format(Scaffold))
-#	pose = pose_from_pdb(Scaffold)
-#	print('\x1b[32m[+] Imported scaffold\x1b[0m')
-#	#2. Isolate motif
-#	Motif(Protein, Chain, Motif_from, Motif_to)
-#	print('\x1b[32m[+] Isolated motif\x1b[0m')
-#	#3. Isolate receptor
-#	Receptor(Protein, RChain)
-#	print('\x1b[32m[+] Isolated receptor\x1b[0m')
-#	#4. Graft motif onto scaffold
-#	print('\x1b[33m[+] Grafting...\x1b[0m')
-#	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
-#	print('\x1b[32m[+] Grafted motif at positions: {} to {}\x1b[0m'.format(MotifPosition[0], MotifPosition[1]))
-#	#5. Fold From Loop
-#	#FFL('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
-#	#print('\x1b[32m[+] Fold From Loop completed\x1b[0m')
-#	#6. RosettaDesign the structure around the motif
-#	if Choice == 'fixbb':
-#		print('\x1b[33m[+] Fixbb designing...\x1b[0m')
-#		RD = RosettaDesign('grafted.pdb')
-#		RD.fixbb_motif(MotifPosition[0], MotifPosition[1])
-#	elif Choice == 'flxbb':
-#		print('\x1b[33m[+] Flxbb designing...\x1b[0m')
-#		RD = RosettaDesign('grafted.pdb')
-#		RD.flxbb_motif(MotifPosition[0], MotifPosition[1])
-#	print('\x1b[32m[+] Design complete\x1b[0m')
+	#0. Make directory
+	os.makedirs('Vaccine', exist_ok=True)
+	os.chdir('Vaccine')
+	print('\x1b[32m[+] Project directory created\x1b[0m')
+	#1. Import scaffold
+	os.system('mv ../{} .'.format(Scaffold))
+	pose = pose_from_pdb(Scaffold)
+	print('\x1b[32m[+] Imported scaffold\x1b[0m')
+	#2. Isolate motif
+	Motif(Protein, Chain, Motif_from, Motif_to)
+	print('\x1b[32m[+] Isolated motif\x1b[0m')
+	#3. Isolate receptor
+	Receptor(Protein, RChain)
+	print('\x1b[32m[+] Isolated receptor\x1b[0m')
+	#4. Graft motif onto scaffold
+	print('\x1b[33m[+] Grafting...\x1b[0m')
+	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
+	print('\x1b[32m[+] Grafted motif at positions: {} to {}\x1b[0m'.format(MotifPosition[0], MotifPosition[1]))
+	#5. Fold From Loop
+	#FFL('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
+	#print('\x1b[32m[+] Fold From Loop completed\x1b[0m')
+	#6. RosettaDesign the structure around the motif
+	if Choice == 'fixbb':
+		print('\x1b[33m[+] Fixbb designing...\x1b[0m')
+		RD = RosettaDesign('grafted.pdb')
+		RD.fixbb_motif(MotifPosition[0], MotifPosition[1])
+	elif Choice == 'flxbb':
+		print('\x1b[33m[+] Flxbb designing...\x1b[0m')
+		RD = RosettaDesign('grafted.pdb')
+		RD.flxbb_motif(MotifPosition[0], MotifPosition[1])
+	print('\x1b[32m[+] Design complete\x1b[0m')
 	#7. Generate and analyse fragments
 	for i in range(1):
 		for f in glob.glob('f[il]xbb_{}.pdb'.format(str(i))): RMSD = Fragments('{}'.format(f), UserName)
