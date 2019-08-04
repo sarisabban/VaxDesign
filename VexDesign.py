@@ -685,9 +685,8 @@ def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, Use
 		RD.flxbb_motif(MotifPosition[0], MotifPosition[1])
 	print('\x1b[32m[+] Design complete\x1b[0m')
 	#7. Generate and analyse fragments
-	X = [3, 3, 3, 3, 1, 3, 3, 2, 3, 3]
 	for i in range(10):
-		RMSD = Fragments('{}_{}.pdb'.format(f, str(i)), UserName)
+		for f in glob.glob('f[il]xbb_{}.pdb'.format(str(i))): RMSD = Fragments('{}.pdb'.format(f), UserName)
 		if RMSD < 2.0:
 			for f in glob.glob('f[il]xbb_{}.pdb'.format(str(i))): os.system('mv {} structure.pdb'.format(f))
 			for f in glob.glob('f[il]xbb_*'): os.remove(f)
