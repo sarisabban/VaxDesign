@@ -15,15 +15,13 @@ Script that computationally designs a vaccine.
 ## Description
 This script autonomously designs a vaccine from a user specified target site. This is not artificial intellegance, you cannot just ask these scripts to design "A" vaccine, you must understand what target site you want to develop antibodies against (make a liturature search and understand your disease and target site), then supply this target site to this script to build a protein structure around it so the final protein can be used as a vaccine. You must have prior understanding of Bioinformatics and Immunology in order to be able to understand what site to target and to supply to these scripts. Once you identify a target site, this script will take it and run a graft and desing protocol, without the need for you to intervene, that will result in an ideal protein structure displaying your target site in its original 3D cofiguration. Thus the protien, theoretically, can be used as a vaccine against this site, and hopefully neutralise the disease you are researching. Everytime you run the VaxDesign.py script a different final protien sequence will be generated for the **same structure**, this is important to keep in mind, because if you want to generate many different structures with different sequences to target the same site you can simply run the script with the same parameters again and you will end up with the same structure but with a different sequence.
 
-This script has been last tested to work well with PyRosetta 4 Release 217 using Python 3.6. If you use this script on a newer PyRosetta or Python version and it fails please notify me of the error and I will update it.
-
-Here is a [video]() that explains how to select a target site, how the script functions, and what results you should get.
+This script has been last tested to work well with PyRosetta 4 Release 223 using Python 3.7. If you use this script on a newer PyRosetta or Python version and it fails please notify me of the error and I will update it.
 
 The script does the following:
 
 *Scaffold Search*
 
-1. Chooses ideal scaffold structures from a scaffold database (provided).
+1. Chooses ideal scaffold structures from a scaffold database.
 
 *Vaccine Design*
 
@@ -31,13 +29,13 @@ The script does the following:
 
 2. Isolates the receptor.
 
-3. Grafts the motif onto the scaffold.
+3. Grafts the motif onto a specified scaffold.
 
-4. Performs the Fold From Loop protocol to optimise the grafted structure.
+4. Performs the Fold From Loop protocol to optimise the grafted structure (NOT IMPLEMENTED YET).
 
 5. RosettaDesign the structure around the motif to find the sequence that would fold the proteins to its designed structure.
 
-6. Generate fragments for Rosetta *Abinitio* folding simulation and analyses their quality.
+6. Generate fragments for Rosetta AbinitioRelax folding simulation and analyses their quality.
 
 Output files are as follows:
 
@@ -54,7 +52,7 @@ Output files are as follows:
 | 9  | structure.fasta         | Fasta of Rosetta Designed structure                                                          |
 | 10 | **structure.pdb**       | Final RosettaDesigned vaccine structure                                                      |
 
-## How To Use
+## Manual
 ### Automatic
 1. Go to [Robetta server](http://robetta.org/) and register a username, it is very easy and straightforward.
 
@@ -69,10 +67,6 @@ Output files are as follows:
 * TO = The end of the target site
 * DATABASE = The directory that contains multiple .pdb scaffold structures to search through
 
-Example:
-
-`python3 VaxDesign.py -s 2y7q A B 420 429 Scaffold_Database`
-
 3. The script will generate a directory called **Scaffolds** which will contain all the scaffold structures. Search through the directory and choose one scaffold (move it to the working directory next to the VaxDesign.py script).
 
 4. Generate a vaccine using the following command:
@@ -86,60 +80,71 @@ Example:
 * TO = The end of the target site
 * SCAFFOLD = The protein scaffold structure generated from the Scaffold.py script
 * PROTOCOL = Choose between fixbb ot flxbb RosettaDesign
-* USERNAME = The [Robetta server](http://robetta.org/) username to generate and download the *Abinitio* fragment files and the PSIPRED secondary structure prediction file
+* USERNAME = The [Robetta server](http://robetta.org/) username to generate and download the AbinitioRelax fragment files and the PSIPRED secondary structure prediction file
 
-Example:
+Calculation time is about 12 hours on a normal desktop computer. Access to the internet is a requirement since the VaxDesign.py script will be sending and retrieving data from some servers.
 
-`python3 VaxDesign.py -p 2y7q A B 420 429 scaffold.pdb fixbb siwa2`
+5. Use this [Rosetta Abinitio](https://github.com/sarisabban/RosettaAbinitio) script to simulate the folding of the final designed vaccine structure. An HPC (High Preformance Computer) and the original C++ [Rosetta](https://www.rosettacommons.org/) are required for this step. This is just an evaluation step to check the design before you synthesise it, other folding simulation algorithms can be used, use what you find most reliable.
 
-Calculation time is about 72 hours on a normal desktop computer. Access to the internet is a requirement since the VaxDesign.py script will be sending and retrieving data from some servers.
-
-5. Use this [Rosetta Abinitio](https://github.com/sarisabban/RosettaAbinitio) script to simulate the folding of the final designed vaccine's protein structure. An HPC (High Preformance Computer) and the original C++ [Rosetta](https://www.rosettacommons.org/) are required for this step. This is just an evaluation step to check the design before you synthesise it, other folding simulation algorithms can be used, use what you find most reliable.
-
-### Manual
+### Breakdown
 You can run each step separatly, use the following commands to run each step:
 
 * Isolate motif:
 
-`python3 VaxDesign.py -m PDBID RCHAIN FROM TO` Example `python3 VaxDesign.py -m 2y7q B 420 429`
+`python3 VaxDesign.py -m PDBID RCHAIN FROM TO`
 
 * Isolate receptor:
 
-`python3 VaxDesign.py -r PDBID RCHAIN` Example `python3 VaxDesign.py -r 2y7q A`
+`python3 VaxDesign.py -r PDBID RCHAIN`
 
 * Graft motif onto the scaffold structure
 
-`python3 VaxDesign.py -g RECEPTOR.pdb MOTIF.pdb SCAFFOLD.pdb` Example `python3 VaxDesign.py -g receptor.pdb motif.pdb scaffold.pdb`
+`python3 VaxDesign.py -g RECEPTOR.pdb MOTIF.pdb SCAFFOLD.pdb`
 
 * Run the Fold From Loop protocol
 
-`python3 VaxDesign.py -f motif.pdb grafted.pdb FROM TO USERNAME` Example `python3 VaxDesign.py -f motif.pdb grafted.pdb 8 17 siwa2`
+`python3 VaxDesign.py -f motif.pdb grafted.pdb FROM TO USERNAME`
 
 In this case the FROM and TO are the positions of the motif on the grafted structure and not the original protien structure
 
 * RosettaDesign the structure
 
-`python3 VaxDesign.py -d PROTOCOL grafted.pdb FROM TO` Example `python3 VaxDesign.py -d fixbb grafted.pdb 8 17`
+`python3 VaxDesign.py -d PROTOCOL grafted.pdb FROM TO`
 
 In this case the FROM and TO are the positions of the motif on the grafted structure and not the original protien structure
 
 You can also choose to RosettaDesign only the suface of the structure (without changing your motif)
 
-`python3 VaxDesign.py -d PROTOCOL grafted.pdb MOTIF_AA_LIST` Example `python3 VaxDesign.py -d surface grafted.pdb 8 12 15 17 23 24 26 28`
+`python3 VaxDesign.py -d PROTOCOL grafted.pdb MOTIF_AA_LIST`
 
 * Generate fragments
 
-`python3 VaxDesign.py -F structure.pdb USERNAME` Example `python3 VaxDesign.py -F structure.pdb acresearch`
+`python3 VaxDesign.py -F structure.pdb USERNAME`
 
 * Help menu
 
 `python3 VaxDesign.py -h`
 
-## References
+### Tutorial
+Here is a tutorial that walks you through how to use the script and the results that can be expected. Here is also a [video]() that performs this tutorial
+
+#python3 VaxDesign.py -s 2y7q A B 420 429 Scaffold_Database
+#python3 VaxDesign.py -p 2y7q A B 420 429 scaffold.pdb fixbb siwa2
+#python3 VaxDesign.py -m 2y7q B 420 429
+#python3 VaxDesign.py -r 2y7q A
+#python3 VaxDesign.py -g receptor.pdb motif.pdb scaffold.pdb
+#python3 VaxDesign.py -f motif.pdb grafted.pdb 8 17 siwa2
+#python3 VaxDesign.py -d fixbb grafted.pdb 8 17
+#python3 VaxDesign.py -d surface grafted.pdb 8 12 15 17 23 24 26 28
+#python3 VaxDesign.py -F structure.pdb acresearch
+
+
+## Reference
 Please reference the following when using this script.
 * 
 
 ## Thigns to do:
+* Add tutorial
 * Add a video
 * Add scaffold database
-* Add the references
+* Add the reference
