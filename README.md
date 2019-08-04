@@ -79,7 +79,7 @@ Example:
 
 4. Generate a vaccine using the following command:
 
-`python3 VexDesign.py -p PDBID RCHAIN CHAIN FROM TO SCAFFOLD CHOICE USERNAME`
+`python3 VexDesign.py -p PDBID RCHAIN CHAIN FROM TO SCAFFOLD PROTOCOL USERNAME`
 
 * PDBID = The protein's [Protein Data Bank](https://www.rcsb.org) identification name
 * RCHAIN = The chain where the receptor resides within the protein .pdb file
@@ -87,7 +87,7 @@ Example:
 * FROM = The start of the target site
 * TO = The end of the target site
 * SCAFFOLD = The protein scaffold structure generated from the Scaffold.py script
-* CHOICE = Choose between fixbb ot flxbb RosettaDesign
+* PROTOCOL = Choose between fixbb ot flxbb RosettaDesign
 * USERNAME = The [Robetta server](http://robetta.org/) username to generate and download the *Abinitio* fragment files and the PSIPRED secondary structure prediction file
 
 Example:
@@ -121,13 +121,13 @@ In this case the FROM and TO are the positions of the motif on the grafted struc
 
 * RosettaDesign the structure
 
-`python3 VexDesign.py -d CHOICE grafted.pdb FROM TO` Example `python3 VexDesign.py -d fixbb grafted.pdb 8 17`
+`python3 VexDesign.py -d PROTOCOL grafted.pdb FROM TO` Example `python3 VexDesign.py -d fixbb grafted.pdb 8 17`
 
 In this case the FROM and TO are the positions of the motif on the grafted structure and not the original protien structure
 
 You can also choose to RosettaDesign only the suface of the structure (without changing your motif)
 
-`python3 VexDesign.py -d CHOICE grafted.pdb MOTIF_AA_LIST` Example `python3 VexDesign.py -d surface grafted.pdb 8 12 15 17 23 24 26 28`
+`python3 VexDesign.py -d PROTOCOL grafted.pdb MOTIF_AA_LIST` Example `python3 VexDesign.py -d surface grafted.pdb 8 12 15 17 23 24 26 28`
 
 * Generate fragments
 
