@@ -657,6 +657,11 @@ def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, Use
 			exit()
 		else:
 			for f in glob.glob('f[il]xbb_{}.pdb'.format(str(i))): os.remove(f)
+			os.remove('plot_frag.pdb')
+			os.remove('frags.200.3mers')
+			os.remove('frags.200.9mers')
+			os.remove('pre.psipred.ss2')
+			os.remove('structure.fasta')
 	print('\x1b[31m[---] Vaccine structure failed\x1b[0m')
 
 def main():
