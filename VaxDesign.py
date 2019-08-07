@@ -50,7 +50,7 @@ parser.add_argument('-p', '--protocol', nargs='+', metavar='', help='Run full pr
 parser.add_argument('-m', '--motif',    nargs='+', metavar='', help='Isolate motif')
 parser.add_argument('-r', '--receptor', nargs='+', metavar='', help='Isolate receptor')
 parser.add_argument('-g', '--graft',    nargs='+', metavar='', help='Graft motif onto scaffold')
-parser.add_argument('-f', '--ffl',      nargs='+', metavar='', help='Fold From Loop')
+parser.add_argument('-f', '--ffd',      nargs='+', metavar='', help='FunFolDes protocol')
 parser.add_argument('-d', '--design',   nargs='+', metavar='', help='Sequence design the structure around the motif')
 parser.add_argument('-F', '--fragments',nargs='+', metavar='', help='Generate and analyse fragments')
 args = parser.parse_args()
@@ -232,13 +232,16 @@ def Fragments(filename, username):
 		jobdata = bs4.BeautifulSoup(Job, 'lxml')
 		status = jobdata.find('td', string='Status: ').find_next().text
 		if status == 'Complete':
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', '\u001b[32m{}\u001b[0m'.format(status))
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'),\
+			'Status:', '\u001b[32m{}\u001b[0m'.format(status))
 			break
 		elif status == 'Active':
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', '\u001b[33m{}\u001b[0m'.format(status))
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'),\
+			'Status:', '\u001b[33m{}\u001b[0m'.format(status))
 			time.sleep(180)
 		else:
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', '\u001b[31m{}\u001b[0m'.format(status))
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'),\
+			'Status:', '\u001b[31m{}\u001b[0m'.format(status))
 			time.sleep(300)
 			continue
 	sequence = pose.sequence()
@@ -330,14 +333,13 @@ def ScaffoldSearch(Protein, RecChain, Chain, Motif_From, Motif_To, Directory):
 		try:
 			MotifGraft('../receptor.pdb', '../motif.pdb', scaffold, 1.0)
 			os.system('cp {} ../Scaffolds'.format(scaffold))
-		except:
-			continue
+		except: continue
 	os.remove('../receptor.pdb')
 	os.remove('../motif.pdb')
 
 class RosettaDesign(object):
 	def __init__(self, filename):
-		''' Generate the resfile. '''
+		''' Generate the resfile '''
 		AminoAcid = {	'A':129, 'P':159, 'N':195, 'H':224,
 						'V':174, 'Y':263, 'C':167, 'K':236,
 						'I':197, 'F':240, 'Q':225, 'S':155,
@@ -371,6 +373,15 @@ class RosettaDesign(object):
 			elif s == 'C' and a == 'S': line = '{} A PIKAA FILMVWY\n'.format(n)
 			resfile.write(line)
 		resfile.close()
+		resfile = open('.resfile', 'r')
+		resfile2 = open('.resfile2', 'a')
+		resfile2.write('NATRO\nSTART\n')
+		next(resfile)
+		next(resfile)
+		for res in resfile:
+			if not int(Motif_From) <= int(res.split()[0]) <= int(Motif_To):
+				resfile2.write(res)
+		resfile2.close()
 		self.SASA = sasalist
 		# aa_composition file
 		with open('.comp', 'w')as comp:
@@ -396,11 +407,9 @@ class RosettaDesign(object):
 				AFTER_FUNCTION QUADRATIC
 				""")
 		self.pose = pose_from_pdb(self.filename)
-		# pushback aa_composition
 		comp = pyrosetta.rosetta.protocols.aa_composition.AddCompositionConstraintMover()
 		comp.create_constraint_from_file('.comp')
 		comp.apply(self.pose)
-		# pushback netcharge
 		charge = pyrosetta.rosetta.protocols.aa_composition.AddNetChargeConstraintMover()
 		charge.create_constraint_from_file('.charge')
 		charge.apply(self.pose)
@@ -429,13 +438,14 @@ class RosettaDesign(object):
 		self.relax = pyrosetta.rosetta.protocols.relax.FastRelax()
 		self.relax.set_scorefxn(self.scorefxn)
 	def __del__(self):
-		''' Remove the resfile. '''
+		''' Remove the resfile '''
 		os.remove('.resfile')
+		os.remove('.resfile2')
 		os.remove('.comp')
 		os.remove('.charge')
 		for f in glob.glob('f[il]xbb.fasc'): os.remove(f)
 	def choose(self):
-		''' Choose the lowest scoring structure. '''
+		''' Choose the lowest scoring structure '''
 		try:	scorefile = open('fixbb.fasc', 'r')
 		except:	scorefile = open('flxbb.fasc', 'r')
 		score = 0
@@ -448,72 +458,14 @@ class RosettaDesign(object):
 				name = line.get('decoy')
 		os.system('mv {} structure.pdb'.format(name))
 		for f in glob.glob('f[il]xbb_*'): os.remove(f)
-	def fixbb(self):
-		'''
-		Performs the RosettaDesign protocol to change a structure's
-		amino acid sequence while maintaining a fixed backbone.
-		Generates the structure.pdb file.
-		'''
-		resfile = pyrosetta.rosetta.core.pack.task.operation.ReadResfile('.resfile')
-		task = pyrosetta.rosetta.core.pack.task.TaskFactory()
-		task.push_back(resfile)
-		movemap = MoveMap()
-		movemap.set_bb(False)
-		movemap.set_chi(True)
-		fixbb = pyrosetta.rosetta.protocols.denovo_design.movers.FastDesign()
-		fixbb.set_task_factory(task)
-		fixbb.set_movemap(movemap)
-		fixbb.set_scorefxn(self.scorefxn_G)
-		self.relax.apply(self.pose)
-		job = PyJobDistributor('fixbb', 10, self.scorefxn)
-		job.native_pose = self.starting_pose
-		while not job.job_complete:
-			self.pose.assign(self.starting_pose)
-			fixbb.apply(self.pose)
-			self.relax.apply(self.pose)
-			job.output_decoy(self.pose)
-	def flxbb(self):
-		'''
-		Performs the RosettaDesign protocol to change a structure's
-		amino acid sequence while allowing for a flexible backbone.
-		Generates the structure.pdb file.
-		'''
-		resfile = pyrosetta.rosetta.core.pack.task.operation.ReadResfile('.resfile')
-		task = pyrosetta.rosetta.core.pack.task.TaskFactory()
-		task.push_back(resfile)
-		movemap = MoveMap()
-		movemap.set_bb(True)
-		movemap.set_chi(True)
-		flxbb = pyrosetta.rosetta.protocols.denovo_design.movers.FastDesign()
-		flxbb.set_task_factory(task)
-		flxbb.set_movemap(movemap)
-		flxbb.set_scorefxn(self.scorefxn_G)
-		self.relax.apply(self.pose)
-		job = PyJobDistributor('flxbb', 10, self.scorefxn)
-		job.native_pose = self.starting_pose
-		while not job.job_complete:
-			self.pose.assign(self.starting_pose)
-			flxbb.apply(self.pose)
-			self.relax.apply(self.pose)
-			job.output_decoy(self.pose)
 	def fixbb_motif(self, Motif_From, Motif_To):
 		'''
 		Applies RosettaDesign with a fixed back bone to
 		change the structure's amino acids (one layer at a
 		time - like in the Design_Layer method) except for
 		a desired continuous motif sequence while maintaining
-		the same backbone.
+		the same backbone
 		'''
-		# Remove motif residues from resfile
-		resfile = open('.resfile', 'r')
-		resfile2 = open('.resfile2', 'a')
-		resfile2.write('NATRO\nSTART\n')
-		next(resfile)
-		next(resfile)
-		for res in resfile:
-			if not int(Motif_From) <= int(res.split()[0]) <= int(Motif_To):
-				resfile2.write(res)
-		resfile2.close()
 		pose = pose_from_pdb(self.filename)
 		starting_pose = Pose()
 		starting_pose.assign(pose)
@@ -537,25 +489,14 @@ class RosettaDesign(object):
 			fixbb.apply(pose)
 			relax.apply(pose)
 			job.output_decoy(pose)
-		os.remove('.resfile2')
 	def flxbb_motif(self, Motif_From, Motif_To):
 		'''
 		Applies RosettaDesign with a flexible back bone to
 		change the structure's amino acids (one layer at a
 		time - like in the Design_Layer method) except for
 		a desired continuous motif sequence while maintaining
-		the same backbone.
+		the same backbone
 		'''
-		# Remove motif residues from resfile
-		resfile = open('.resfile', 'r')
-		resfile2 = open('.resfile2', 'a')
-		resfile2.write('NATRO\nSTART\n')
-		next(resfile)
-		next(resfile)
-		for res in resfile:
-			if not int(Motif_From) <= int(res.split()[0]) <= int(Motif_To):
-				resfile2.write(res)
-		resfile2.close()
 		pose = pose_from_pdb(self.filename)
 		starting_pose = Pose()
 		starting_pose.assign(pose)
@@ -572,18 +513,17 @@ class RosettaDesign(object):
 		flxbb.set_task_factory(task)
 		flxbb.set_movemap(movemap)
 		flxbb.set_scorefxn(scorefxn)
-		job = PyJobDistributor('flxbb', 10, scorefxn)
+		job = PyJobDistributor('flxbb', 1, scorefxn)
 		job.native_pose = starting_pose
 		while not job.job_complete:
 			pose.assign(starting_pose)
 			flxbb.apply(pose)
 			relax.apply(pose)
 			job.output_decoy(pose)
-		os.remove('.resfile2')
 	def surf(self, motif_list):
 		'''
 		Applies RosettaDesign with a fixed backbone to change only the
-		structure's surface amino acids except for the desired motif.
+		structure's surface amino acids except for the desired motif
 		'''
 		pose = pose_from_pdb(self.filename)
 		starting_pose = Pose()
@@ -593,27 +533,21 @@ class RosettaDesign(object):
 		relax.set_scorefxn(scorefxn)
 		packtask = standard_packer_task(pose)
 		pyrosetta.rosetta.core.pack.task.parse_resfile(pose, packtask, '.resfile')
-		#Identify non-surface and motif residues
 		Motif = motif_list
-		for s in self.SASA:
-			if s[3] != 'S':
-				Motif.append(s[0])
-		for aa in Motif:
-			packtask.temporarily_set_pack_residue(int(aa), False)
-		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, packtask)
+		for s in self.SASA: if s[3] != 'S': Motif.append(s[0])
+		for aa in Motif: packtask.temporarily_set_pack_residue(int(aa), False)
 		fixbb = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, packtask, 10)
-		job = PyJobDistributor('fixbb', 10, scorefxn)
+		job = PyJobDistributor('fixbb', 1, scorefxn)
 		job.native_pose = starting_pose
 		while not job.job_complete:
 			pose.assign(starting_pose)
-			relax.apply(pose)
 			fixbb.apply(pose)
 			relax.apply(pose)
 			job.output_decoy(pose)
 
-def FFL(Motif, Scaffold, Motif_From, Motif_To, username):
-	''' Performs the Fold From Loops protocol '''
-	print('\x1b[31m[-] FFL is not yet fully available in PyRosetta\x1b[0m')
+def FFD(Motif, Scaffold, Motif_From, Motif_To, username):
+	''' Performs the FunFolDes protocol '''
+	print('\x1b[31m[-] FunFolDes is not yet fully available in PyRosetta\x1b[0m')
 
 def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, UserName):
 	#0. Make directory
@@ -635,44 +569,41 @@ def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, Use
 	MotifPosition = Graft('receptor.pdb', 'motif.pdb', pose)
 	print('\x1b[32m[+] Grafted motif at positions: {} to {}\x1b[0m'.format(MotifPosition[0], MotifPosition[1]))
 	#5. Fold From Loop
-	#FFL('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
+	#FFD('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
 	#print('\x1b[32m[+] Fold From Loop completed\x1b[0m')
-	#6. RosettaDesign the structure around the motif
-	if Choice == 'fixbb':
-		print('\x1b[33m[+] Fixbb designing...\x1b[0m')
-		RD = RosettaDesign('grafted.pdb')
-		RD.fixbb_motif(MotifPosition[0], MotifPosition[1])
-	elif Choice == 'flxbb':
-		print('\x1b[33m[+] Flxbb designing...\x1b[0m')
-		RD = RosettaDesign('grafted.pdb')
-		RD.flxbb_motif(MotifPosition[0], MotifPosition[1])
-	print('\x1b[32m[+] Design complete\x1b[0m')
-	#7. Generate and analyse fragments
-	for i in range(1):
-		for f in glob.glob('f[il]xbb_{}.pdb'.format(str(i))): RMSD = Fragments('{}'.format(f), UserName)
-		if RMSD < 2.0:
-			for f in glob.glob('f[il]xbb_{}.pdb'.format(str(i))): os.system('mv {} structure.pdb'.format(f))
-			for f in glob.glob('f[il]xbb_*'): os.remove(f)
-			print('\x1b[32m[+++] Vaccine structure completed\x1b[0m')
-			exit()
-		else:
-			for f in glob.glob('f[il]xbb_{}.pdb'.format(str(i))): os.remove(f)
-			os.remove('plot_frag.pdb')
-			os.remove('frags.200.3mers')
-			os.remove('frags.200.9mers')
-			os.remove('pre.psipred.ss2')
-			os.remove('structure.fasta')
-	print('\x1b[31m[---] Vaccine structure failed\x1b[0m')
+	#6. RosettaDesign the structure around the motif and 7. generate fragments
+	RD = RosettaDesign('grafted.pdb')
+	for i in range(1, 21):
+		if Choice == 'fixbb':
+			print('\x1b[33m[+] Fixbb designing...\x1b[0m')
+			RD.fixbb_motif(MotifPosition[0], MotifPosition[1])
+		elif Choice == 'flxbb':
+			print('\x1b[33m[+] Flxbb designing...\x1b[0m')
+			RD.flxbb_motif(MotifPosition[0], MotifPosition[1])
+		elif Choice == 'surface':
+			print('\x1b[33m[+] Surface designing...\x1b[0m')
+			motiflist = []
+			for i in range(MotifPosition[0], MotifPosition[1]+1): motiflist.append(i)
+			RD.surf(motiflist)
+		for f in glob.glob('f[il]xbb_0.pdb': f = f
+		os.system('mv {} structure.pdb'.format(f))
+		Fragments('structure.pdb', username)
+		os.system('mkdir {}'.format(str(i)))
+		os.system('mv structure.pdb structure.fasta Vaccine/{}'.format(str(i)))
+		os.system('mv plot_frag.pdf Vaccine/{}'.format(str(i)))
+		os.system('mv pre.psipred.ss2 frags.200.3mers frags.200.9mers Vaccine/{}'.format(str(i)))
+	print('\x1b[32m[+++] Vaccine structure completed\x1b[0m')
 
 def main():
 	if args.scaffold:   # Search for scaffolds
-		print('\x1b[32m[+] Searching for scaffolds\x1b[0m')
+		print('\x1b[33m[.] Searching for scaffolds...\x1b[0m')
 		ScaffoldSearch(	sys.argv[2],         # PDB ID
 						sys.argv[3],         # Receptor chain
 						sys.argv[4],         # Motif chain
 						sys.argv[5],         # Motif from
 						sys.argv[6],         # Motif to
 						sys.argv[7])         # Directory of scaffolds
+		print('\x1b[32m[+] Search completed\x1b[0m')
 	elif args.protocol: # Run full protocol
 		protocol(		sys.argv[2],         # PDB ID
 						sys.argv[3],         # Receptor chain
@@ -696,13 +627,14 @@ def main():
 						sys.argv[3])         # Receptor chain
 		print('\x1b[32m[+] Receptor isolated\x1b[0m')
 	elif args.graft:    # Graft motif onto scaffold
+		print('\x1b[33m[.] Grafting...\x1b[0m')
 		pose = pose_from_pdb(	sys.argv[4]) # Scaffold PDB file name
 		MotifPosition = Graft(	sys.argv[2], # Receptor PDB file name
 								sys.argv[3], # Motif PDB file name
 								pose)
 		print('\x1b[32m[+] Grafted motif onto scaffold between positions: {} and {}\x1b[0m'.format(MotifPosition[0], MotifPosition[1]))
-	elif args.ffl:      # Fold From Loop
-		FFL(			sys.argv[2],         # Motif PDB file name
+	elif args.ffd:      # Fold From Loop
+		FFD(			sys.argv[2],         # Motif PDB file name
 						sys.argv[3],         # Scaffold PDB file name
 						sys.argv[4],         # Motif on scaffold from
 						sys.argv[5],         # Motif on scaffold to
@@ -710,19 +642,19 @@ def main():
 		#print('\x1b[32m[+] Fold From Loop completed\x1b[0m')
 	elif args.design:   # Sequence design the structure around the motif
 		if sys.argv[2] == 'fixbb':           # Choice
-			print('\x1b[32m[+] Fixbb designing\x1b[0m')
+			print('\x1b[33m[.] Fixbb designing...\x1b[0m')
 			RD = RosettaDesign(	sys.argv[3]) # Scaffold PDB file name
 			RD.fixbb_motif(		sys.argv[4], # Motif on scaffold from
 								sys.argv[5]) # Motif on scaffold to
 			print('\x1b[32m[+] Design complete\x1b[0m')
 		elif sys.argv[2] == 'flxbb':         # Choice
-			print('\x1b[32m[+] Flxbb designing\x1b[0m')
+			print('\x1b[33m[.] Flxbb designing...\x1b[0m')
 			RD = RosettaDesign(	sys.argv[3]) # Scaffold PDB file name
 			RD.flxbb_motif(		sys.argv[4], # Motif on scaffold from
 								sys.argv[5]) # Motif on scaffold to
 			print('\x1b[32m[+] Design complete\x1b[0m')
 		elif sys.argv[2] == 'surface':       # Choice
-			print('\x1b[32m[+] Surface designing\x1b[0m')
+			print('\x1b[33m[.] Surface designing...\x1b[0m')
 			RD = RosettaDesign(	sys.argv[3]) # Scaffold PDB file name
 			RD.surf(			sys.argv[4:])# Motif amino acid list
 			print('\x1b[32m[+] Design complete\x1b[0m')
