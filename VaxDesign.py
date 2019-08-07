@@ -588,7 +588,7 @@ def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, Use
 			RD.surf(motiflist)
 		for f in glob.glob('f[il]xbb_0.pdb'): f = f
 		os.system('mv {} structure.pdb'.format(f))
-		Fragments('structure.pdb', username)
+		Fragments('structure.pdb', UserName)
 		os.system('mkdir {}'.format(str(i)))
 		os.system('mv structure.pdb structure.fasta {}'.format(str(i)))
 		os.system('mv plot_frag.pdf {}'.format(str(i)))
