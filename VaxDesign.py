@@ -338,7 +338,7 @@ def ScaffoldSearch(Protein, RecChain, Chain, Motif_From, Motif_To, Directory):
 	os.remove('../motif.pdb')
 
 class RosettaDesign(object):
-	def __init__(self, filename):
+	def __init__(self, filename, Motif_From, Motif_To):
 		''' Generate the resfile '''
 		AminoAcid = {	'A':129, 'P':159, 'N':195, 'H':224,
 						'V':174, 'Y':263, 'C':167, 'K':236,
@@ -458,7 +458,7 @@ class RosettaDesign(object):
 				name = line.get('decoy')
 		os.system('mv {} structure.pdb'.format(name))
 		for f in glob.glob('f[il]xbb_*'): os.remove(f)
-	def fixbb_motif(self, Motif_From, Motif_To):
+	def fixbb_motif(self):
 		'''
 		Applies RosettaDesign with a fixed back bone to
 		change the structure's amino acids (one layer at a
@@ -489,7 +489,7 @@ class RosettaDesign(object):
 			fixbb.apply(pose)
 			relax.apply(pose)
 			job.output_decoy(pose)
-	def flxbb_motif(self, Motif_From, Motif_To):
+	def flxbb_motif(self):
 		'''
 		Applies RosettaDesign with a flexible back bone to
 		change the structure's amino acids (one layer at a
@@ -573,14 +573,14 @@ def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, Use
 	#FFD('motif.pdb', 'grafted.pdb', MotifPosition, UserName)
 	#print('\x1b[32m[+] Fold From Loop completed\x1b[0m')
 	#6. RosettaDesign the structure around the motif and 7. generate fragments
-	RD = RosettaDesign('grafted.pdb')
+	RD = RosettaDesign('grafted.pdb', MotifPosition[0], MotifPosition[1])
 	for i in range(1, 21):
 		if Choice == 'fixbb':
 			print('\x1b[33m[+] Fixbb designing...\x1b[0m')
-			RD.fixbb_motif(MotifPosition[0], MotifPosition[1])
+			RD.fixbb_motif()
 		elif Choice == 'flxbb':
 			print('\x1b[33m[+] Flxbb designing...\x1b[0m')
-			RD.flxbb_motif(MotifPosition[0], MotifPosition[1])
+			RD.flxbb_motif()
 		elif Choice == 'surface':
 			print('\x1b[33m[+] Surface designing...\x1b[0m')
 			motiflist = []
@@ -644,15 +644,17 @@ def main():
 	elif args.design:   # Sequence design the structure around the motif
 		if sys.argv[2] == 'fixbb':           # Choice
 			print('\x1b[33m[.] Fixbb designing...\x1b[0m')
-			RD = RosettaDesign(	sys.argv[3]) # Scaffold PDB file name
-			RD.fixbb_motif(		sys.argv[4], # Motif on scaffold from
+			RD = RosettaDesign(	sys.argv[3], # Scaffold PDB file name
+								sys.argv[4], # Motif on scaffold from
 								sys.argv[5]) # Motif on scaffold to
+			RD.fixbb_motif()
 			print('\x1b[32m[+] Design complete\x1b[0m')
 		elif sys.argv[2] == 'flxbb':         # Choice
 			print('\x1b[33m[.] Flxbb designing...\x1b[0m')
-			RD = RosettaDesign(	sys.argv[3]) # Scaffold PDB file name
-			RD.flxbb_motif(		sys.argv[4], # Motif on scaffold from
+			RD = RosettaDesign(	sys.argv[3], # Scaffold PDB file name
+								sys.argv[4], # Motif on scaffold from
 								sys.argv[5]) # Motif on scaffold to
+			RD.flxbb_motif()
 			print('\x1b[32m[+] Design complete\x1b[0m')
 		elif sys.argv[2] == 'surface':       # Choice
 			print('\x1b[33m[.] Surface designing...\x1b[0m')
