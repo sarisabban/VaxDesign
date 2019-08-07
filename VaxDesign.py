@@ -534,7 +534,8 @@ class RosettaDesign(object):
 		packtask = standard_packer_task(pose)
 		pyrosetta.rosetta.core.pack.task.parse_resfile(pose, packtask, '.resfile')
 		Motif = motif_list
-		for s in self.SASA: if s[3] != 'S': Motif.append(s[0])
+		for s in self.SASA:
+			if s[3] != 'S': Motif.append(s[0])
 		for aa in Motif: packtask.temporarily_set_pack_residue(int(aa), False)
 		fixbb = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, packtask, 10)
 		job = PyJobDistributor('fixbb', 1, scorefxn)
@@ -585,13 +586,13 @@ def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, Use
 			motiflist = []
 			for i in range(MotifPosition[0], MotifPosition[1]+1): motiflist.append(i)
 			RD.surf(motiflist)
-		for f in glob.glob('f[il]xbb_0.pdb': f = f
+		for f in glob.glob('f[il]xbb_0.pdb'): f = f
 		os.system('mv {} structure.pdb'.format(f))
 		Fragments('structure.pdb', username)
 		os.system('mkdir {}'.format(str(i)))
-		os.system('mv structure.pdb structure.fasta Vaccine/{}'.format(str(i)))
-		os.system('mv plot_frag.pdf Vaccine/{}'.format(str(i)))
-		os.system('mv pre.psipred.ss2 frags.200.3mers frags.200.9mers Vaccine/{}'.format(str(i)))
+		os.system('mv structure.pdb structure.fasta {}'.format(str(i)))
+		os.system('mv plot_frag.pdf {}'.format(str(i)))
+		os.system('mv pre.psipred.ss2 frags.200.3mers frags.200.9mers {}'.format(str(i)))
 	print('\x1b[32m[+++] Vaccine structure completed\x1b[0m')
 
 def main():
