@@ -267,7 +267,7 @@ def Fragments(filename, username):
 			size = line[1]
 	frag.close()
 	print('\u001b[36m[+] Analysing fragment quality...\u001b[0m')
-	for i in range(1, int(size)):
+	for i in range(1, int(size)+1):
 		rmsd = []
 		pose_copy = pyrosetta.Pose()
 		pose_copy.assign(pose)
