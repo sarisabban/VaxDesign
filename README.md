@@ -126,17 +126,6 @@ You can also choose to RosettaDesign only the suface of the structure (without c
 ### Tutorial
 Here is a tutorial that walks you through how to use the script and the results that can be expected. Here is also a [video]() that performs this tutorial
 
-#python3 VaxDesign.py -s 2y7q A B 420 429 Scaffold_Database
-#python3 VaxDesign.py -p 2y7q A B 420 429 scaffold.pdb fixbb siwa2
-#python3 VaxDesign.py -m 2y7q B 420 429
-#python3 VaxDesign.py -r 2y7q A
-#python3 VaxDesign.py -g receptor.pdb motif.pdb scaffold.pdb
-#python3 VaxDesign.py -f motif.pdb grafted.pdb 8 17 siwa2
-#python3 VaxDesign.py -d fixbb grafted.pdb 8 17
-#python3 VaxDesign.py -d surface grafted.pdb 8 12 15 17 23 24 26 28
-#python3 VaxDesign.py -F structure.pdb acresearch
-
-
 ## Reference
 Please reference the following when using this script.
 * 
