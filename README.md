@@ -136,11 +136,11 @@ Here is a tutorial that walks you through how to use the script and the results 
 
 `python3 VaxDesign.py -g receptor.pdb motif.pdb scaffold.pdb`
 
-#`python3 VaxDesign.py -f motif.pdb grafted.pdb FROM TO siwa2` #####
+`python3 VaxDesign.py -f motif.pdb grafted.pdb 61 66 siwa2`
 
-#`python3 VaxDesign.py -d fixbb grafted.pdb FROM TO`#########
+`python3 VaxDesign.py -d fixbb grafted.pdb 61 66`
 
-#`python3 VaxDesign.py -d surface grafted.pdb NUMBER SEQUENCE`###########
+`python3 VaxDesign.py -d surface grafted.pdb 1 3 5 7 8 9 10 11 12 13 16 17 19 20 23 24 25 27 28 37 38 39 40 43 47 50 51 52 53 54 55 57 58 59 60 73 74`
 
 `python3 VaxDesign.py -F structure.pdb acresearch`
 
