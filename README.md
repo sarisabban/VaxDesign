@@ -150,7 +150,7 @@ Sequence design the grafted structure:
 `python3 VaxDesign.py -d fixbb grafted.pdb 61 66`
 
 Generate fragments for the grafted structure (for an Abinitio simulation):
-`python3 VaxDesign.py -F structure.pdb acresearch`
+`python3 VaxDesign.py -F structure.pdb siwa2`
 
 Sequence design of the surface only:
 `python3 VaxDesign.py -d surface grafted.pdb 1 3 5 7 8 9 10 11 12 13 16 17 19 20 23 24 25 27 28 37 38 39 40 43 47 50 51 52 53 54 55 57 58 59 60 73 74`
