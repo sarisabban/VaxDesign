@@ -546,9 +546,9 @@ class RosettaDesign(object):
 			relax.apply(pose)
 			job.output_decoy(pose)
 
-def FFD(Motif, Scaffold, Motif_From, Motif_To, username):
-	''' Performs the FunFolDes protocol '''
-	print('\x1b[31m[-] FunFolDes is not yet fully available in PyRosetta\x1b[0m')
+def FFL(Motif, Scaffold, Motif_From, Motif_To, username):
+	''' Performs the Fold From Loop protocol '''
+	print('\x1b[31m[-] Fold From Loop is not yet fully available in PyRosetta\x1b[0m')
 
 def protocol(Protein, RChain, Chain, Motif_from, Motif_to, Scaffold, Choice, UserName):
 	#0. Make directory
@@ -635,7 +635,7 @@ def main():
 								pose)
 		print('\x1b[32m[+] Grafted motif onto scaffold between positions: {} and {}\x1b[0m'.format(MotifPosition[0], MotifPosition[1]))
 	elif args.ffd:      # Fold From Loop
-		FFD(			sys.argv[2],         # Motif PDB file name
+		FFL(			sys.argv[2],         # Motif PDB file name
 						sys.argv[3],         # Scaffold PDB file name
 						sys.argv[4],         # Motif on scaffold from
 						sys.argv[5],         # Motif on scaffold to

@@ -31,7 +31,7 @@ The script does the following:
 
 3. Grafts the motif onto a specified scaffold.
 
-4. Performs the FunFolDes protocol to optimise the grafted structure (NOT IMPLEMENTED YET).
+4. Performs the Fold From Loop protocol to optimise the grafted structure (NOT IMPLEMENTED YET).
 
 5. RosettaDesign the structure around the motif to find the sequence that would fold the proteins to its designed structure.
 
@@ -101,7 +101,7 @@ You can run each step separatly, use the following commands to run each step:
 
 `python3 VaxDesign.py -g RECEPTOR.pdb MOTIF.pdb SCAFFOLD.pdb` use `-g or --graft`
 
-* Run the FunFolDes protocol
+* Run the Fold From Loop protocol (Not Implemented Yet)
 
 `python3 VaxDesign.py -f motif.pdb grafted.pdb FROM TO USERNAME` use `-f or --ffd`
 
@@ -126,23 +126,34 @@ You can also choose to RosettaDesign only the suface of the structure (without c
 ### Tutorial
 Here is a tutorial that walks you through how to use the script and the results that can be expected. Here is also a [video]() that performs this tutorial
 
+Search a database of structures for a scaffold:
 `python3 VaxDesign.py -s 2y7q A B 332 337 Scaffold_Database`
 
+Run the entire protocol:
 `python3 VaxDesign.py -p 2y7q A B 332 337 scaffold.pdb fixbb siwa2` where scaffold.pdb is a cleaned structure of the PDB ID 3HZ7
 
+*Breakdown of the protocol:*
+
+Isolate the motif:
 `python3 VaxDesign.py -m 2y7q B 332 337`
 
+Isolate the receptor:
 `python3 VaxDesign.py -r 2y7q A`
 
+Graft the motif onto the scaffold using the receptor as reference:
 `python3 VaxDesign.py -g receptor.pdb motif.pdb scaffold.pdb`
 
+Fold From Loop protocol (Not Implemented Yet):
 `python3 VaxDesign.py -f motif.pdb grafted.pdb 61 66 siwa2`
 
+Sequence design the grafted structure:
 `python3 VaxDesign.py -d fixbb grafted.pdb 61 66`
 
-`python3 VaxDesign.py -d surface grafted.pdb 1 3 5 7 8 9 10 11 12 13 16 17 19 20 23 24 25 27 28 37 38 39 40 43 47 50 51 52 53 54 55 57 58 59 60 73 74`
-
+Generate fragments for the grafted structure (for an Abinitio simulation):
 `python3 VaxDesign.py -F structure.pdb acresearch`
+
+Sequence design of the surface only:
+`python3 VaxDesign.py -d surface grafted.pdb 1 3 5 7 8 9 10 11 12 13 16 17 19 20 23 24 25 27 28 37 38 39 40 43 47 50 51 52 53 54 55 57 58 59 60 73 74`
 
 ## Reference
 Please reference the following when using this script.
