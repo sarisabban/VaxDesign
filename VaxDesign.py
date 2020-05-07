@@ -132,6 +132,7 @@ def Graft(receptor, motif, scaffold):
 						motif,      # motif_structure
 						1.0,        # RMSD_tolerance
 						2.0,        # NC_points_RMSD_tolerance
+						0.5,        # gp_r_clash_atom_scale
 						5,          # clash_score_cutoff
 						1,          # min_fragment_size
 						'0:0',      # combinatory_fragment_size_delta
