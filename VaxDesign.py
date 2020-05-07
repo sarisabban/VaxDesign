@@ -316,6 +316,7 @@ def Fragments(filename, username):
 	os.system('gnuplot < gnuplot_sets')
 	os.remove('gnuplot_sets')
 	os.remove('RMSDvsPosition.dat')
+	os.system('mv frags.200.3mers frags.200.9mers pre.psipred.ss2 plot_frag.pdf ./Vaccine')
 	print('\u001b[34m[+] Fragment average RMSD:\u001b[0m {}'.format(round(Average_RMSD, 3)))
 	return(Average_RMSD)
 
