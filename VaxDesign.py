@@ -208,7 +208,7 @@ def Fragments(filename, username):
 	'''
 	pose = pose_from_pdb(filename)
 	sequence = pose.sequence()
-	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
+	web = requests.get('http://robetta.bakerlab.org/fragmentsubmit.jsp')
 	payload = {	'UserName':          username,
 				'Email':             '',
 				'Notes':             '{}'.format(filename.split('.')[0]),
@@ -220,14 +220,14 @@ def Fragments(filename, username):
 				'DipolarConstraints':'',
 				'type':              'submit'}
 	session = requests.session()
-	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload, files=dict(foo='bar'))
+	response = session.post('http://robetta.bakerlab.org/fragmentsubmit.jsp', data=payload, files=dict(foo='bar'))
 	for line in response:
 		line = line.decode()
-		if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line):
+		if '<a href="fragmentqueue.jsp?id=' in line:
 			JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line)
-	JobURL = 'http://www.robetta.org/' + JobID[0]
-	ID = JobID[0].split('=')
-	print('\u001b[32m[+] Fragments submitted to Robetta.org server with JOB ID: {}\u001b[0m'.format(str(ID[1])))
+	ID = JobID[0].split('=')[-1]
+	JobURL = 'http://old.robetta.org/fragmentqueue.jsp?id=' + ID
+	print('\u001b[32m[+] Fragments submitted to Robetta.org server with JOB ID: {}\u001b[0m'.format(str(ID)))
 	while True:
 		Job = urllib.request.urlopen(JobURL)
 		jobdata = bs4.BeautifulSoup(Job, 'lxml')
