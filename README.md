@@ -124,7 +124,7 @@ You can also choose to RosettaDesign only the suface of the structure (without c
 `python3 VaxDesign.py -h` use `-h or --help`
 
 ### Tutorial
-Here is a tutorial that walks you through how to use the script and the results that can be expected. Here is also a [video]() that performs this tutorial
+Here is a tutorial that walks you through how to use the script and the results that can be expected. Here is also a [video](https://youtu.be/rZl9yAI6jzc) that performs this tutorial
 
 Search a database of structures for a scaffold:
 `python3 VaxDesign.py -s 2y7q A B 332 337 Scaffold_Database`
@@ -158,8 +158,3 @@ Sequence design of the surface only:
 ## Reference
 Please reference the following when using this script.
 * 
-
-## Thigns to do:
-* Add a video
-* Add scaffold database
-* Add the reference
