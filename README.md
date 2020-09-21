@@ -157,4 +157,4 @@ Sequence design of the surface only:
 
 ## Reference
 Please reference the following when using this script.
-* 
+* Sari Sabban (2020) Computationally Grafting An IgE Epitope Onto A Scaffold. bioRxiv 2020.09.14.296392; doi: https://doi.org/10.1101/2020.09.14.296392 
