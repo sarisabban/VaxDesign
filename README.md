@@ -157,4 +157,5 @@ Sequence design of the surface only:
 
 ## Reference
 Please reference the following when using this script.
-* [Sari Sabban (2020) Computationally Grafting An IgE Epitope Onto A Scaffold. bioRxiv 2020.09.14.296392; doi: https://doi.org/10.1101/2020.09.14.296392](https://www.biorxiv.org/content/10.1101/2020.09.14.296392v2)
+* [Sari Sabban (2020) Computationally grafting an IgE epitope onto a scaffold. bioRxiv 2020.09.14.296392; doi: https://doi.org/10.1101/2020.09.14.296392](https://www.biorxiv.org/content/10.1101/2020.09.14.296392v2)
+* [Sari Sabban (2021) Computationally grafting an IgE epitope onto a scaffold: Implications for a pan anti-allergy vaccine design. 19(ISSN 2001-0370) pp. 4738-4750](doi.org/10.1016/j.csbj.2021.08.012)
